@@ -1,6 +1,6 @@
-# Prevalence of Thrombotic Risk Factors among Recipients of Different Types of COVID-19 Vaccines 
+# Prevalence of risk factors for venous thromboembolism among people vaccinated with the Pfizer BioNTech and Oxford AstraZeneca COVID-19 vaccines in England
 
-This is the code and configuration for our project describing the prevalence of different thrombotic risk factors according to type of vaccine received. This is a work in progress, and the README will be updated before project completion. 
+This is the code and configuration for our project describing the prevalence of different thrombotic risk factors according to type of COVID-19 vaccine received among people in England. This is a work in progress, and the README will be updated before project completion. 
 
 * The paper is [here]()
 * Raw model outputs, including charts, crosstabs, etc, are in `released_outputs/`
