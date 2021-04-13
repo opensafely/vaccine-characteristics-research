@@ -1,6 +1,6 @@
-# {{project_name}}
+# Prevalence of Thrombotic Risk Factors among Recipients of Different Types of COVID-19 Vaccines 
 
-This is the code and configuration for {{project_name}}
+This is the code and configuration for our project describing the prevalence of different thrombotic risk factors according to type of vaccine received. This is a work in progress, and the README will be updated before project completion. 
 
 * The paper is [here]()
 * Raw model outputs, including charts, crosstabs, etc, are in `released_outputs/`
