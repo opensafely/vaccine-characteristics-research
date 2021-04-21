@@ -24,24 +24,16 @@ local outputfile `2'
 di "`inputfile'"
 di "`outputfile'"
 
-* set directories that exist 
-global projectdir `c(pwd)'
-di "$projectdir"
-global outdir "$projectdir/output" 
-di "$outdir"
-
 * create folders that do not exist on server 
-capture	mkdir "$outdir/tables"
-capture	mkdir "$outdir/output/plots"
-capture	mkdir "$outdir/output/logs"
-capture	mkdir "$outdir/output/tempdata"
+capture	mkdir "`c(pwd)'/output/logs"
+capture	mkdir "`c(pwd)'/output/tempdata"
 
 * set ado path
 adopath + "$projectdir/analysis/extra_ados"
 
 * open a log file
 cap log close
-log using `c(pwd)'/output/00_data_management.log, replace 
+log using "`c(pwd)'/output/logs/00_data_management.log", replace 
 
 
 * IMPORT DATA=================================================================*/ 
@@ -91,8 +83,12 @@ tab any_covid_vaccine any_az_vaccine
 tab any_pfizer_vaccine any_az_vaccine
 
 * type of vaccine at first dose 
-gen vaccine_type = "Pfizer" if pfizer_covid_vaccine_date == any_covid_vaccine_date & pfizer_covid_vaccine_date != . 
-replace vaccine_type = "AZ" if az_covid_vaccine_date == any_covid_vaccine_date & az_covid_vaccine_date != . 
+gen vaccine_type = 1 if pfizer_covid_vaccine_date == any_covid_vaccine_date & pfizer_covid_vaccine_date != . 
+replace vaccine_type = 2 if az_covid_vaccine_date == any_covid_vaccine_date & az_covid_vaccine_date != . 
+
+label define vaccine 1 "Pfizer" 2 "AstraZeneca"
+label values vaccine_type vaccine 
+
 
 tab vaccine_type, m
 summarize(any_covid_vaccine_date), format 
@@ -144,31 +140,43 @@ foreach var of varlist cvt portal smv hepatic unspecified other {
 
 * any vte 
 gen any_vte = max(dvt, pe, cvt, portal, smv, hepatic, unspecified, other)
+label define any_vte 1 "Yes" 0 "No"
+label values any_vte any_vte 
 
-* time since most recent thrombotic event
+* time since most recent thrombotic event (in months)
 * max will ignore missing unless all values missing 
 * ADD IN HOSPITAL FOR FINAL RUN AND MAKE THIS A MAX STATAMENT 
 foreach var of varlist dvt pe cvt portal smv hepatic unspecified other { 
 	
-	gen time_since_`var'= `var'_gp
+	gen latest_`var'= `var'_gp
+	gen time_since_`var'= (((any_covid_vaccine_date - latest_`var')/365.25)*12)
 
 }
 
-gen ime_since_any = max(time_since_dvt, time_since_pe, time_since_cvt, time_since_portal, time_since_smv, time_since_hepatic, time_since_unspecified, time_since_other)
+gen time_since_any = max(time_since_dvt, time_since_pe, time_since_cvt, time_since_portal, time_since_smv, time_since_hepatic, time_since_unspecified, time_since_other)
 
 * event in last three months? 
 foreach var of varlist dvt pe cvt portal smv hepatic unspecified other { 
 	
-	gen recent_`var'= 1 if ((any_covid_vaccine_date - time_since_`var') <= 90)
+	gen recent_`var'= 1 if (time_since_`var' <= 3)
 	replace recent_`var'= 0 if recent_`var' == . 
+	label define recent_`var' 1 "Yes" 0 "No"
+	label values recent_`var' recent_`var' 
 
 }
+
+gen recent_any = max(recent_dvt, recent_pe, recent_cvt, recent_portal, recent_smv, recent_hepatic, recent_unspecified, recent_other)
+label define recent_any 1 "Yes" 0 "No"
+label values recent_any recent_any 
 
 * DEMOGRAPHICS 
 
 * Sex
 gen male = 1 if sex == "M"
-replace male = 0 if sex == "F"
+replace male = 2 if sex == "F"
+
+label define male 1 "Yes" 2 "No"
+label values male male 
 
 * Ethnicity 
 /* classified as White, South Asian, Black, Mixed, Other, Not Known
@@ -245,10 +253,57 @@ tab care_home care_home_type
 
 * [PLACEHOLDER]
 
+* LABEL VARIABLES=============================================================*/ 
 
+* Demographics
+label var patient_id				"Patient ID"
+label var age 						"Age (years)"
+label var agegroup					"Grouped age"
+label var sex 						"Sex"
+label var male 						"Male"
+label var bmi 						"Body Mass Index (BMI, kg/m2)"
+label var bmicat 					"Grouped BMI"
+label var imd 						"Index of Multiple Deprivation (IMD)"
+label var ethnicity					"Ethnicity"
+
+label var care_home_type 		    "Care Home Type"
+label var care_home     		    "Care Home"
+
+label var vaccine_type				"Type of COVID-19 Vaccine (First Dose)"
+
+label var dvt						"DVT"
+label var pe						"PE"
+label var cvt						"CVT"
+label var portal					"Portal"
+label var smv						"SMV"
+label var hepatic					"Hepatic" 
+label var other 					"Other"
+label var unspecified				"Unspecified"  
+label var any_vte  					"Any VTE"
+
+label var time_since_dvt 			"Months since latest DVT"
+label var time_since_pe             "Months since latest PE"
+label var time_since_cvt            "Months since latest CVT"
+label var time_since_portal         "Months since latest Portal"
+label var time_since_smv            "Months since latest SMV"
+label var time_since_hepatic        "Months since latest Hepatic" 
+label var time_since_other          "Months since latest Other"
+label var time_since_unspecified    "Months since latest Unspecified"  
+label var time_since_any    		"Months since latest Any VTE"  
+
+label var recent_dvt				"Recent DVT"
+label var recent_pe                 "Recent PE"
+label var recent_cvt                "Recent CVT"
+label var recent_portal             "Recent Portal"
+label var recent_smv                "Recent SMV"
+label var recent_hepatic            "Recent Hepatic" 
+label var recent_other              "Recent Other"
+label var recent_unspecified        "Recent Unspecified"
+label var recent_any		        "Recent Any VTE"  
+									
 * EXPORT DATA=================================================================*/ 
 
-save `c(pwd)'/output/`outputfile', replace 
+save `c(pwd)'/`outputfile', replace 
 
 * CLOSE LOG===================================================================*/ 
 
