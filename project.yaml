@@ -1,7 +1,7 @@
 version: "3.0"
 
 expectations:
-  population_size: 100000
+  population_size: 1000000
 
 actions:
 
@@ -14,8 +14,27 @@ actions:
         cohort: output/input.csv
 
   00_data_management:
-    run: stata-mp:latest analysis/00_data_management.do output/input.csv tempdata/temp_data
+    run: stata-mp:latest analysis/00_data_management.do output/input.csv output/tempdata/temp_data
     needs: [generate_cohort] 
     outputs:
-      moderately_sensitive: 
-        log: output/logs/00_data_management.log 
+      highly_sensitive:
+        data: output/tempdata/temp_data.dta
+      moderately_sensitive:
+        log: output/logs/00_data_management.log
+
+  01_study_population:
+    run: stata-mp:latest analysis/01_study_population.do output/tempdata/temp_data.dta output/tempdata/study_population
+    needs: [00_data_management] 
+    outputs:
+      highly_sensitive:
+        data: output/tempdata/study_population.dta
+      moderately_sensitive:
+        log: output/logs/01_study_population.log
+
+  02_baseline_characteristics:
+    run: stata-mp:latest analysis/02_baseline_characteristics.do output/tempdata/study_population.dta output/tables/table1.txt
+    needs: [01_study_population] 
+    outputs:
+      moderately_sensitive:
+        log: output/logs/02_baseline_characteristics.log
+        table: output/tables/table1.txt
