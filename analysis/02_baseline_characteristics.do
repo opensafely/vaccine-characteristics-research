@@ -194,37 +194,37 @@ gen byte cons=1
 tabulatevariable, variable(cons) min(1) max(1) 
 file write tablecontent _n 
 
-tab vaccine_type
+safetab vaccine_type
 
 tabulatevariable, variable(agegroup) min(1) max(6) 
 file write tablecontent _n 
 
-tab vaccine_type agegroup 
+safetab vaccine_type agegroup 
 
 tabulatevariable, variable(male) min(1) max(2) 
 file write tablecontent _n 
 
-tab vaccine_type male 
+safetab vaccine_type male 
 
 tabulatevariable, variable(ethnicity) min(1) max(5) missing 
 file write tablecontent _n 
 
-tab vaccine_type ethnicity 
+safetab vaccine_type ethnicity 
 
 tabulatevariable, variable(imd) min(1) max(5) missing
 file write tablecontent _n 
 
-tab vaccine_type imd 
+safetab vaccine_type imd 
 
 tabulatevariable, variable(bmicat) min(1) max(3) missing
 file write tablecontent _n 
 
-tab vaccine_type bmicat 
+safetab vaccine_type bmicat 
 
 tabulatevariable, variable(care_home) min(1) max(3) missing
 file write tablecontent _n 
 
-tab vaccine_type care_home  
+safetab vaccine_type care_home  
 
 * VTE variables (binary)
 
@@ -251,7 +251,7 @@ foreach varlist in  dvt					    ///
 						
 						tabulatevariable, variable(`varlist') min(1) max(1)
 						
-						tab vaccine_type `varlist'
+						safetab vaccine_type `varlist'
 	
 					}
 	
