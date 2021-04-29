@@ -1,0 +1,9 @@
+opensafely/ethnicity/2020-04-27
+opensafely/haematological-cancer/2020-04-15
+opensafely/lung-cancer/2020-04-15
+opensafely/cancer-excluding-lung-and-haematological/2020-04-15
+opensafely/incident-venous-thromboembolic-disease/41e757e8
+opensafely/venous-thromboembolic-disease-hospital/28d7e4b3
+opensafely/atrial-fibrillation-or-flutter/777fb1d7
+opensafely/vte-classified-codes/08b94f7d 
+opensafely/venous-thromboembolism-past-by-type-secondary-care-and-mortality-data/4402fca7
