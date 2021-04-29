@@ -127,12 +127,12 @@ foreach var of varlist dvt pe cvt_vte portal_vte hepatic_vte vc_vte unspecified_
 	
 	* Basic cross tabulations for sense checking variables 
 	
-	tab `var'_gp_any 
-	tab `var'_hospital_any
-	tab `var' 
-	tab `var'_gp_any `var'
-	tab `var'_hospital_any `var'
-	tab `var'_hospital_any `var'_gp_any 
+	safetab `var'_gp_any 
+	safetab `var'_hospital_any
+	safetab `var' 
+	safetab `var'_gp_any `var'
+	safetab `var'_hospital_any `var'
+	safetab `var'_hospital_any `var'_gp_any 
 
 }
 
@@ -143,7 +143,7 @@ foreach var of varlist smv_vte other_vte {
 	label define `var' 1 "Yes" 0 "No"
 	label values `var' `var' 
 
-	tab `var' 
+	safetab `var' 
 
 }
 
@@ -261,7 +261,7 @@ replace care_home = .u if care_home >= .
 label define care_home 3 "Care or Nursing Home" 2 "Nursing Home" 1 "Care Home" 0 "Private Home" .u "Missing"
 label values care_home care_home 
 
-tab care_home care_home_type 
+safetab care_home care_home_type 
 
 * OTHER CLINICAL COMORBIDITIES 
 
