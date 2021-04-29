@@ -220,7 +220,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    dvt_any=patients.satisfying("dvt_gp OR dvt_hospital"),
+    dvt=patients.satisfying("dvt_gp OR dvt_hospital"),
     ## pe
     pe_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["pe"]),
@@ -238,7 +238,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    pe_any=patients.satisfying("pe_gp OR pe_hospital"),
+    pe=patients.satisfying("pe_gp OR pe_hospital"),
     ##cvt 
     cvt_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["cvt"]),
@@ -256,7 +256,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    cvt_vte_any=patients.satisfying("cvt_vte_gp OR cvt_vte_hospital"),
+    cvt_vte=patients.satisfying("cvt_vte_gp OR cvt_vte_hospital"),
     ## portal 
     portal_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["portal"]),
@@ -274,7 +274,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    portal_vte_any=patients.satisfying("portal_vte_gp OR portal_vte_hospital"),
+    portal_vte=patients.satisfying("portal_vte_gp OR portal_vte_hospital"),
     ## smv 
     smv_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["smv"]),
@@ -285,6 +285,7 @@ study = StudyDefinition(
         return_expectations={"date": {"latest": "index_date"}},
     ),
     ### no ICD-10 codes for SMV in hospital 
+    smv_vte=patients.satisfying("smv_vte_gp"),
     ## hepatic 
     hepatic_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["hepatic"]),
@@ -302,7 +303,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    hepatic_vte_any=patients.satisfying("hepatic_vte_gp OR hepatic_vte_hospital"),
+    hepatic_vte=patients.satisfying("hepatic_vte_gp OR hepatic_vte_hospital"),
     ## vc 
     vc_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["vc"]),
@@ -320,7 +321,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    vc_vte_any=patients.satisfying("vc_vte_gp OR vc_vte_hospital"),
+    vc_vte=patients.satisfying("vc_vte_gp OR vc_vte_hospital"),
     ## unspecified 
     unspecified_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["unspecified"]),
@@ -338,7 +339,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    unspecified_vte_any=patients.satisfying("unspecified_vte_gp OR unspecified_vte_hospital"),
+    unspecified_vte=patients.satisfying("unspecified_vte_gp OR unspecified_vte_hospital"),
     ## other 
     other_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["other"]),
@@ -347,9 +348,9 @@ study = StudyDefinition(
         on_or_before="any_covid_vaccine_date - 1 day",
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
-    )
+    ),
     # no other VTE ICD-10 codes 
-
+    other_vte=patients.satisfying("other_vte_gp"),
 ) 
 
 

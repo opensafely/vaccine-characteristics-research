@@ -99,12 +99,13 @@ summarize(any_covid_vaccine_date), format
 * Convert dates (need to add hospital categorisation)
 foreach var of varlist dvt_gp dvt_hospital ///
 					   pe_gp pe_hospital ///
-					   cvt_gp ///
-					   portal_gp ///
-					   smv_gp ///
-					   hepatic_gp ///
-					   unspecified_gp ///
-					   other_gp { 
+					   cvt_vte_gp cvt_vte_hospital ///
+					   portal_vte_gp portal_vte_hospital ///
+					   smv_vte_gp ///
+					   hepatic_vte_gp hepatic_vte_hospital ///
+					   vc_vte_gp vc_vte_hospital ///
+					   unspecified_vte_gp unspecified_vte_hospital ///
+					   other_vte_gp { 
 					   	
 					    capture confirm string variable `var'
 						rename `var' _tmp
@@ -113,50 +114,61 @@ foreach var of varlist dvt_gp dvt_hospital ///
 						format %d `var'
 						
 					   }
-* dvt 
-tab dvt 
-label define dvt 1 "Yes" 0 "No"
-label values dvt dvt 
 
-* pe 
-tab pe 
-label define pe 1 "Yes" 0 "No"
-label values pe pe 
-
-* generate indicator variables (note: code not needed when ICD-10 codes available)
-gen cvt = . 
-gen portal = . 
-gen smv = . 
-gen hepatic = . 
-gen unspecified = . 
-gen other = . 
-
-foreach var of varlist cvt portal smv hepatic unspecified other { 
+* create indicator variables and apply labels 
+foreach var of varlist dvt pe cvt_vte portal_vte hepatic_vte vc_vte unspecified_vte { 
 	
-	replace `var' = (`var'_gp != .)
+	gen `var'_gp_any = (`var'_gp != .)
+	gen `var'_hospital_any = (`var'_hospital != .)
 	label define `var' 1 "Yes" 0 "No"
 	label values `var' `var' 
+	label values `var'_gp_any `var' 
+	label values `var'_hospital_any `var' 
+	
+	* Basic cross tabulations for sense checking variables 
+	
+	tab `var'_gp_any 
+	tab `var'_hospital_any
+	tab `var' 
+	tab `var'_gp_any `var'
+	tab `var'_hospital_any `var'
+	tab `var'_hospital_any `var'_gp_any 
+
 }
 
+* Handle SMV and other diiferently (only one source of information)
+
+foreach var of varlist smv_vte other_vte { 
+	
+	label define `var' 1 "Yes" 0 "No"
+	label values `var' `var' 
+
+	tab `var' 
+
+}
+
+
 * any vte 
-gen any_vte = max(dvt, pe, cvt, portal, smv, hepatic, unspecified, other)
+gen any_vte = max(dvt, pe, cvt_vte, portal_vte, smv_vte, hepatic_vte, vc_vte, unspecified_vte, other_vte)
 label define any_vte 1 "Yes" 0 "No"
 label values any_vte any_vte 
 
 * time since most recent thrombotic event (in months)
 * max will ignore missing unless all values missing 
-* ADD IN HOSPITAL FOR FINAL RUN AND MAKE THIS A MAX STATAMENT 
-foreach var of varlist dvt pe cvt portal smv hepatic unspecified other { 
+foreach var of varlist dvt pe cvt_vte portal_vte hepatic_vte vc_vte unspecified_vte { 
 	
-	gen latest_`var'= `var'_gp
+	gen latest_`var'= max(`var'_gp, `var'_hospital)
 	gen time_since_`var'= (((any_covid_vaccine_date - latest_`var')/365.25)*12)
 
 }
 
-gen time_since_any = max(time_since_dvt, time_since_pe, time_since_cvt, time_since_portal, time_since_smv, time_since_hepatic, time_since_unspecified, time_since_other)
+gen time_since_smv_vte = (((any_covid_vaccine_date - smv_vte_gp)/365.25)*12)
+gen time_since_other_vte = (((any_covid_vaccine_date - other_vte_gp)/365.25)*12)
+
+gen time_since_any = max(time_since_dvt, time_since_pe, time_since_cvt_vte, time_since_portal_vte, time_since_smv_vte, time_since_hepatic_vte, time_since_vc_vte, time_since_unspecified_vte, time_since_other_vte)
 
 * event in last three months? 
-foreach var of varlist dvt pe cvt portal smv hepatic unspecified other { 
+foreach var of varlist dvt pe cvt_vte portal_vte smv_vte hepatic_vte vc_vte unspecified_vte other_vte { 
 	
 	gen recent_`var'= 1 if (time_since_`var' <= 3)
 	replace recent_`var'= 0 if recent_`var' == . 
@@ -165,7 +177,7 @@ foreach var of varlist dvt pe cvt portal smv hepatic unspecified other {
 
 }
 
-gen recent_any = max(recent_dvt, recent_pe, recent_cvt, recent_portal, recent_smv, recent_hepatic, recent_unspecified, recent_other)
+gen recent_any = max(recent_dvt, recent_pe, recent_cvt_vte, recent_portal_vte, recent_smv_vte, recent_hepatic_vte, recent_vc_vte, recent_unspecified_vte, recent_other_vte)
 label define recent_any 1 "Yes" 0 "No"
 label values recent_any recent_any 
 
@@ -241,10 +253,12 @@ datacheck inlist(care_home_type, "CareHome", "NursingHome", "CareOrNursingHome",
 
 * Create a binary varaible 
 gen care_home = 0 if care_home_type == "PrivateHome"
-replace care_home = 1 if care_home_type != "" & care_home_type != "PrivateHome"  
+replace care_home = 1 if care_home_type == "CareHome"  
+replace care_home = 2 if care_home_type == "NursingHome"  
+replace care_home = 3 if care_home_type == "CareOrNursingHome"  
 replace care_home = .u if care_home >= .
 
-label define care_home 1 "Care or Nursing Home" 0 "Private Home" .u "Missing"
+label define care_home 3 "Care or Nursing Home" 2 "Nursing Home" 1 "Care Home" 0 "Private Home" .u "Missing"
 label values care_home care_home 
 
 tab care_home care_home_type 
@@ -273,12 +287,13 @@ label var vaccine_type				"Type of COVID-19 Vaccine (First Dose)"
 
 label var dvt						"DVT"
 label var pe						"PE"
-label var cvt						"CVT"
-label var portal					"Portal"
-label var smv						"SMV"
-label var hepatic					"Hepatic" 
-label var other 					"Other"
-label var unspecified				"Unspecified"  
+label var cvt_vte					"CVT"
+label var portal_vte				"Portal"
+label var smv_vte					"SMV"
+label var hepatic_vte				"Hepatic" 
+label var other_vte 				"Other"
+label var vc_vte 					"Vena Cava"
+label var unspecified_vte			"Unspecified"  
 label var any_vte  					"Any VTE"
 
 label var time_since_dvt 			"Months since latest DVT"
@@ -287,6 +302,7 @@ label var time_since_cvt            "Months since latest CVT"
 label var time_since_portal         "Months since latest Portal"
 label var time_since_smv            "Months since latest SMV"
 label var time_since_hepatic        "Months since latest Hepatic" 
+label var time_since_vc       		"Months since latest Vena Cava" 
 label var time_since_other          "Months since latest Other"
 label var time_since_unspecified    "Months since latest Unspecified"  
 label var time_since_any    		"Months since latest Any VTE"  
@@ -297,6 +313,7 @@ label var recent_cvt                "Recent CVT"
 label var recent_portal             "Recent Portal"
 label var recent_smv                "Recent SMV"
 label var recent_hepatic            "Recent Hepatic" 
+label var recent_vc		            "Recent Vena Cava" 
 label var recent_other              "Recent Other"
 label var recent_unspecified        "Recent Unspecified"
 label var recent_any		        "Recent Any VTE"  

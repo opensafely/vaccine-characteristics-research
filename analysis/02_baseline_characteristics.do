@@ -194,28 +194,49 @@ gen byte cons=1
 tabulatevariable, variable(cons) min(1) max(1) 
 file write tablecontent _n 
 
+tab vaccine_type
+
 tabulatevariable, variable(agegroup) min(1) max(6) 
 file write tablecontent _n 
+
+tab vaccine_type agegroup 
 
 tabulatevariable, variable(male) min(1) max(2) 
 file write tablecontent _n 
 
+tab vaccine_type male 
+
 tabulatevariable, variable(ethnicity) min(1) max(5) missing 
 file write tablecontent _n 
 
+tab vaccine_type ethnicity 
+
 tabulatevariable, variable(imd) min(1) max(5) missing
 file write tablecontent _n 
+
+tab vaccine_type imd 
+
+tabulatevariable, variable(bmicat) min(1) max(3) missing
+file write tablecontent _n 
+
+tab vaccine_type bmicat 
+
+tabulatevariable, variable(care_home) min(1) max(3) missing
+file write tablecontent _n 
+
+tab vaccine_type care_home  
 
 * VTE variables (binary)
 
 foreach varlist in  dvt					    ///
 					pe					    ///
-					cvt					    ///
-					portal				    ///
-					smv					    ///
-					hepatic				    ///
-					other 				    ///
-					unspecified			    ///
+					cvt_vte				    ///
+					portal_vte			    ///
+					smv_vte				    ///
+					hepatic_vte 			///
+				    vc_vte					///
+					other_vte			    ///
+					unspecified_vte		    ///
 					any_vte  			    ///
 					recent_dvt				///
 					recent_pe				///
@@ -223,11 +244,14 @@ foreach varlist in  dvt					    ///
 					recent_portal			///
 					recent_smv				///
 					recent_hepatic			///
+					recent_vc				///
 					recent_other 			///
 					recent_unspecified		///
 					recent_any  {
 						
 						tabulatevariable, variable(`varlist') min(1) max(1)
+						
+						tab vaccine_type `varlist'
 	
 					}
 	
@@ -241,11 +265,14 @@ foreach varlist in time_since_dvt 				///
                    time_since_portal            ///
                    time_since_smv               ///
                    time_since_hepatic           ///
+				   time_since_vc				///
                    time_since_other             ///
                    time_since_unspecified       ///
                    time_since_any    {
 				   	
 						summarizevariable, variable(`varlist')
+					
+						summarize vaccine_type `varlist'
 					
 				   }	
 

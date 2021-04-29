@@ -13,7 +13,7 @@ OTHER OUTPUT: 			logfile, printed to folder output/logs
 							
 ==============================================================================*/
 
-/* HOUSEKEEPING===============================================================*/
+/*HOUSEKEEPING================================================================*/ 
 
 * use input and output file names from project.yaml 
 local inputfile `1'
