@@ -6,3 +6,4 @@ opensafely/incident-venous-thromboembolic-disease/41e757e8
 opensafely/venous-thromboembolic-disease-hospital/28d7e4b3
 opensafely/atrial-fibrillation-or-flutter/777fb1d7
 opensafely/vte-classified-codes/08b94f7d 
+opensafely/venous-thromboembolism-past-by-type-secondary-care-and-mortality-data/4402fca7

@@ -3,13 +3,6 @@ from cohortextractor import (
     codelist_from_csv,
 )
 # read in VTE codelists 
-vte_codes_gp = codelist_from_csv(
-    "codelists/opensafely-incident-venous-thromboembolic-disease.csv",
-    system="ctv3",
-    column="CTV3Code",
-    category_column="type",
-)
-
 vte_codes_classified = codelist_from_csv(
     "codelists/opensafely-vte-classified-codes.csv",
     system="ctv3",
@@ -18,9 +11,9 @@ vte_codes_classified = codelist_from_csv(
 )
 
 vte_codes_hospital = codelist_from_csv(
-    "codelists/opensafely-venous-thromboembolic-disease-hospital.csv",
+    "codelists/opensafely-venous-thromboembolism-past-by-type-secondary-care-and-mortality-data.csv",
     system="icd10",
-    column="ICD_code",
+    column="code",
     category_column="type",
 )
 # codelists for covariates 

@@ -23,7 +23,7 @@ study = StudyDefinition(
         "incidence" : 0.2
     },
 
-    # specify an index date 
+    # the index date will be a persons first date of a COVID vaccine, but I need to define an index date for the expectations in the dummy data as dynamic dates currently not allowed 
     index_date="2020-12-07",
 
     # select the study population
@@ -87,6 +87,7 @@ study = StudyDefinition(
     ),
 
     # ADMINISTRATIVE 
+
     # currently registered 
     is_registered_with_tpp=patients.registered_as_of(
      "any_covid_vaccine_date"
@@ -123,11 +124,12 @@ study = StudyDefinition(
               AND LocationRequiresNursing='Y'
             """,
             "CareOrNursingHome": "IsPotentialCareHome",
-            "PrivateHome": "DEFAULT",
+            "PrivateHome": "NOT IsPotentialCareHome",
+            "": "DEFAULT",
         },
         return_expectations={
             "rate": "universal",
-            "category": {"ratios": {"CareHome": 0.30, "NursingHome": 0.10, "CareOrNursingHome": 0.10, "PrivateHome":0.5},},
+            "category": {"ratios": {"CareHome": 0.30, "NursingHome": 0.10, "CareOrNursingHome": 0.10, "PrivateHome":0.45, "":0.05},},
         },
     ),
 
@@ -164,13 +166,13 @@ study = StudyDefinition(
         minimum_age_at_measurement=16,
         return_expectations={
             "date": {},
-            "float": {"distribution": "normal", "mean": 35, "stddev": 10},
+            "float": {"distribution": "normal", "mean": 28, "stddev": 10},
             "incidence": 0.95,
         },
     ), 
     # GEOGRAPHICAL VARIABLES 
     ## index of multiple deprivation, estimate of SES based on patient post code 
-	imd=patients.categorised_as(
+    imd=patients.categorised_as(
         {
             "0": "DEFAULT",
             "1": """index_of_multiple_deprivation >=1 AND index_of_multiple_deprivation < 32844*1/5""",
@@ -200,8 +202,7 @@ study = StudyDefinition(
     ),
 
     # VTE  
-    ## cvst 
-    # placeholder 
+
     ## dvt 
     dvt_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["dvt"]),
@@ -219,7 +220,7 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    dvt=patients.satisfying("dvt_gp OR dvt_hospital"),
+    dvt_any=patients.satisfying("dvt_gp OR dvt_hospital"),
     ## pe
     pe_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["pe"]),
@@ -237,9 +238,9 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
-    pe=patients.satisfying("pe_gp OR pe_hospital"),
+    pe_any=patients.satisfying("pe_gp OR pe_hospital"),
     ##cvt 
-    cvt_gp=patients.with_these_clinical_events(
+    cvt_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["cvt"]),
         returning="date", 
         date_format="YYYY-MM-DD",
@@ -247,8 +248,17 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
+    cvt_vte_hospital=patients.admitted_to_hospital(
+        returning="date_admitted",
+        with_these_diagnoses=filter_codes_by_category(vte_codes_hospital, include=["cvt"]),
+        on_or_before="any_covid_vaccine_date - 1 day",
+        date_format="YYYY-MM-DD",
+        find_last_match_in_period=True,
+        return_expectations={"date": {"latest": "index_date"}},
+    ),
+    cvt_vte_any=patients.satisfying("cvt_vte_gp OR cvt_vte_hospital"),
     ## portal 
-    portal_gp=patients.with_these_clinical_events(
+    portal_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["portal"]),
         returning="date", 
         date_format="YYYY-MM-DD",
@@ -256,8 +266,17 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
+    portal_vte_hospital=patients.admitted_to_hospital(
+        returning="date_admitted",
+        with_these_diagnoses=filter_codes_by_category(vte_codes_hospital, include=["portal"]),
+        on_or_before="any_covid_vaccine_date - 1 day",
+        date_format="YYYY-MM-DD",
+        find_last_match_in_period=True,
+        return_expectations={"date": {"latest": "index_date"}},
+    ),
+    portal_vte_any=patients.satisfying("portal_vte_gp OR portal_vte_hospital"),
     ## smv 
-    smv_gp=patients.with_these_clinical_events(
+    smv_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["smv"]),
         returning="date", 
         date_format="YYYY-MM-DD",
@@ -265,8 +284,9 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
+    ### no ICD-10 codes for SMV in hospital 
     ## hepatic 
-    hepatic_gp=patients.with_these_clinical_events(
+    hepatic_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["hepatic"]),
         returning="date", 
         date_format="YYYY-MM-DD",
@@ -274,8 +294,35 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
+    hepatic_vte_hospital=patients.admitted_to_hospital(
+        returning="date_admitted",
+        with_these_diagnoses=filter_codes_by_category(vte_codes_hospital, include=["hepatic"]),
+        on_or_before="any_covid_vaccine_date - 1 day",
+        date_format="YYYY-MM-DD",
+        find_last_match_in_period=True,
+        return_expectations={"date": {"latest": "index_date"}},
+    ),
+    hepatic_vte_any=patients.satisfying("hepatic_vte_gp OR hepatic_vte_hospital"),
+    ## vc 
+    vc_vte_gp=patients.with_these_clinical_events(
+        filter_codes_by_category(vte_codes_classified, include=["vc"]),
+        returning="date", 
+        date_format="YYYY-MM-DD",
+        on_or_before="any_covid_vaccine_date - 1 day",
+        find_last_match_in_period=True,
+        return_expectations={"date": {"latest": "index_date"}},
+    ), 
+    vc_vte_hospital=patients.admitted_to_hospital(
+        returning="date_admitted",
+        with_these_diagnoses=filter_codes_by_category(vte_codes_hospital, include=["vc"]),
+        on_or_before="any_covid_vaccine_date - 1 day",
+        date_format="YYYY-MM-DD",
+        find_last_match_in_period=True,
+        return_expectations={"date": {"latest": "index_date"}},
+    ),
+    vc_vte_any=patients.satisfying("vc_vte_gp OR vc_vte_hospital"),
     ## unspecified 
-    unspecified_gp=patients.with_these_clinical_events(
+    unspecified_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["unspecified"]),
         returning="date", 
         date_format="YYYY-MM-DD",
@@ -283,45 +330,25 @@ study = StudyDefinition(
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
     ),
+    unspecified_vte_hospital=patients.admitted_to_hospital(
+        returning="date_admitted",
+        with_these_diagnoses=filter_codes_by_category(vte_codes_hospital, include=["unspecified"]),
+        on_or_before="any_covid_vaccine_date - 1 day",
+        date_format="YYYY-MM-DD",
+        find_last_match_in_period=True,
+        return_expectations={"date": {"latest": "index_date"}},
+    ),
+    unspecified_vte_any=patients.satisfying("unspecified_vte_gp OR unspecified_vte_hospital"),
     ## other 
-    other_gp=patients.with_these_clinical_events(
+    other_vte_gp=patients.with_these_clinical_events(
         filter_codes_by_category(vte_codes_classified, include=["other"]),
         returning="date", 
         date_format="YYYY-MM-DD",
         on_or_before="any_covid_vaccine_date - 1 day",
         find_last_match_in_period=True,
         return_expectations={"date": {"latest": "index_date"}},
-    ),
-    # LABORATORY VARIABLES 
-    ## platelets 
-    ### this will return the raw value, but if multiple measurements on the same day, it will return the mean of these. 
-
-    # CLINICAL COMORBIDITIES  
-    ## cancer - THIS NEEDS TO BE INCIDENT CANCER 
-    cancer=patients.satisfying(
-        "lung_cancer OR haem_cancer OR other_cancer",
-        lung_cancer=patients.with_these_clinical_events(
-        lung_cancer_codes,
-        on_or_before="any_covid_vaccine_date",
-        return_expectations={"incidence": 0.10},
-        ),
-        haem_cancer=patients.with_these_clinical_events(
-        haem_cancer_codes,
-        on_or_before="any_covid_vaccine_date",
-        return_expectations={"incidence": 0.05},
-        ),
-        other_cancer=patients.with_these_clinical_events(
-        other_cancer_codes,
-        on_or_before="any_covid_vaccine_date",
-        return_expectations={"incidence": 0.10},
-        ),
-    ),
-
-
-    # OTHER VARIABLES
-    ## smoking  
-
-     
+    )
+    # no other VTE ICD-10 codes 
 
 ) 
 
