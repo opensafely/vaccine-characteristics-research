@@ -1,0 +1,75 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /workspace/output/logs/01_study_population.log
+  log type:  text
+ opened on:  29 Apr 2021, 18:05:54
+
+. 
+. * IMPORT DATA================================================================
+> =*/ 
+. 
+. use `c(pwd)'/`inputfile', clear
+
+. 
+. * POPULATION SELECTION=======================================================
+> =*/ 
+. 
+. * Known Gender
+. datacheck inlist(sex,"M", "F"), nolist
+
+. 
+. * Adult and known age 
+. datacheck age >= 16 & age <= 105, nolist
+
+. 
+. * Registration history and alive 
+. 
+. datacheck has_follow_up == 1, nolist
+
+. datacheck has_died == 0, nolist
+
+. 
+. * Known vaccine date
+. datacheck any_covid_vaccine_date != ., nolist 
+
+. 
+. * Known vaccine type 
+. datacheck inlist(vaccine_type, 1, 0, .), nolist
+
+ (7181706 contradictions)
+
+. noi di "DROP MISSING VACCINE TYPE"
+DROP MISSING VACCINE TYPE
+
+. 
+. drop if vaccine_type == . 
+(20,403 observations deleted)
+
+. 
+. * Confirm one row per patient 
+. duplicates tag patient_id, generate(dup_check)
+
+Duplicates in terms of patient_id
+
+. assert dup_check == 0 
+
+. drop dup_check
+
+. 
+. * EXPORT DATA================================================================
+> =*/ 
+. 
+. save `c(pwd)'/`outputfile', replace
+(note: file /workspace/output/tempdata/study_population.dta not found)
+file /workspace/output/tempdata/study_population.dta saved
+
+. 
+. * CLOSE LOG==================================================================
+> =*/ 
+. 
+. log close
+      name:  <unnamed>
+       log:  /workspace/output/logs/01_study_population.log
+  log type:  text
+ closed on:  29 Apr 2021, 18:06:30
+-------------------------------------------------------------------------------
