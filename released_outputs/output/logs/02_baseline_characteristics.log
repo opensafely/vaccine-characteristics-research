@@ -1,0 +1,748 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /workspace/output/logs/02_baseline_characteristics.log
+  log type:  text
+ opened on:  29 Apr 2021, 18:10:05
+
+. 
+. * IMPORT DATA================================================================
+> =*/ 
+. 
+. use `c(pwd)'/`inputfile', clear
+
+. 
+. /* PROGRAMS TO AUTOMATE TABULATIONS==========================================
+> =*/ 
+. 
+. *****************************************************************************
+> ***
+. * All code for categorical variables from K Bhaskaran 
+. * Generic code to output one row within the table 
+. 
+. /* Explanatory Notes 
+> the syntax row specifies two inputs for the program: 
+>         a VARNAME which is your variable that you would like to tabulate, str
+> atified 
+>         by the exposure 
+>         a LEVEL which is only used to extract a value label to print 
+>         a CONDITION which is a string of some condition you impose 
+>         
+> the program counts if variable and condition and returns the counts
+> column percentages are then automatically generated
+> this is then written to the text file 'tablecontent' 
+> 
+> */ 
+. 
+. cap prog drop generaterow
+
+. program define generaterow
+  1. syntax, variable(varname) [level(string)] condition(string) 
+  2. 
+.         * indent once for first row, two for others 
+.         if ("`level'" != "") & ("`level'" != "1") {
+  3.                 file write tablecontent _tab
+  4.         } 
+  5.         else if ("`level'" == "") {
+  6.                         file write tablecontent _tab
+  7.         } 
+  8.         
+.         * print a value label at beginning of row 
+.         if ("`level'" != "") { 
+  9.                         local vlab: label `variable' `level'
+ 10.                         file write tablecontent ("`vlab'") _tab 
+ 11.                         }
+ 12.         else {
+ 13.                         file write tablecontent ("missing") _tab
+ 14.                         }
+ 15.         
+.         * create denominator and print total 
+.         qui count
+ 16.         local overalldenom=r(N)
+ 17.         
+.         * total column
+.         qui count if `variable' `condition'
+ 18.         local rowdenom = r(N)
+ 19.         local colpct = 100*(r(N)/`overalldenom')
+ 20.         file write tablecontent %9.0gc (`rowdenom')  (" (") %3.1f (`colpct
+> ') (")") _tab
+ 21. 
+.         * first exposure value 
+.         qui count if vaccine_type == 1 
+ 22.         local rowdenom = r(N)
+ 23.         qui count if vaccine_type == 1 & `variable' `condition'
+ 24.         local pct = 100*(r(N)/`rowdenom') 
+ 25.         file write tablecontent %9.0gc (r(N)) (" (") %3.1f (`pct') (")") _
+> tab
+ 26. 
+.         * second exposure value 
+.         qui count if vaccine_type == 2
+ 27.         local rowdenom = r(N)
+ 28.         qui count if vaccine_type == 2 & `variable' `condition'
+ 29.         local pct = 100*(r(N)/`rowdenom')
+ 30.         file write tablecontent %9.0gc (r(N)) (" (") %3.1f  (`pct') (")") 
+> _n
+ 31.         
+. end
+
+. 
+. * Generic code to output one section (varible) within table (calls above)
+. 
+. /* Explanatory Notes 
+> defines program tabulate variable 
+> syntax is : 
+> 
+>         - a VARNAME which is your variable of interest 
+>         - a numeric minimum (min value of your variable you want to tabulate)
+>         - a numeric maximum (max value of your variable you want to tabulate)
+>         - optional missing option, default value is no missing  
+>         
+> for values lowest to highest of the variable, the program then calls the 
+> generate row program defined above to generate a row 
+> if there is a missing specified, then run the generate row for missing vals
+> */ 
+. 
+. cap prog drop tabulatevariable
+
+. prog define tabulatevariable
+  1. syntax, variable(varname) min(real) max(real) [missing]
+  2.         
+.         local lab: variable label `variable'
+  3.         file write tablecontent ("`lab'") _tab 
+  4. 
+.         forvalues varlevel = `min'/`max'{ 
+  5.                 generaterow, variable(`variable') level(`varlevel') condit
+> ion("==`varlevel'")
+  6.         }
+  7.         
+.         if "`missing'"!="" generaterow, variable(`variable') condition(">=.")
+  8. 
+. end
+
+. 
+. * Generic code to summarise a continuous variable 
+. 
+. cap prog drop summarizevariable 
+
+. prog define summarizevariable
+  1. syntax, variable(varname) 
+  2. 
+.         local lab: variable label `variable'
+  3.         file write tablecontent ("`lab'") _tab
+  4.         
+.         qui summarize `variable', d
+  5.         file write tablecontent ("Median (IQR)") _tab 
+  6.         file write tablecontent (round(r(p50)),0.01) (" (") (round(r(p25))
+> ,0.01) ("-") (round(r(p75)),0.01) (")") _tab
+  7.                                                         
+.         qui summarize `variable' if vaccine_type == 1, d
+  8.         file write tablecontent (round(r(p50)),0.01) (" (") (round(r(p25))
+> ,0.01) ("-") (round(r(p75)),0.01) (")") _tab
+  9. 
+.         qui summarize `variable' if vaccine_type == 2, d
+ 10.         file write tablecontent (round(r(p50)),0.01) (" (") (round(r(p25))
+> ,0.01) ("-") (round(r(p75)),0.01) (")") _n
+ 11.         
+.         qui summarize `variable', d
+ 12.         file write tablecontent _tab ("Min, Max") _tab 
+ 13.         file write tablecontent (round(r(min)),0.01) (", ") (round(r(max))
+> ,0.01) ("") _tab
+ 14.                                                         
+.         qui summarize `variable' if vaccine_type == 1, d
+ 15.         file write tablecontent (round(r(min)),0.01) (", ") (round(r(max))
+> ,0.01) ("") _tab
+ 16. 
+.         qui summarize `variable' if vaccine_type == 2, d
+ 17.         file write tablecontent (round(r(min)), 0.01) (", ") (round(r(max)
+> ),0.01) ("") _n
+ 18.         
+. end
+
+. 
+. 
+. /* INVOKE PROGRAMS FOR TABLE 1===============================================
+> =*/ 
+. * include cross tabs in log for QC 
+. 
+. *Set up output file
+. cap file close tablecontent
+
+. file open tablecontent using `c(pwd)'/output/tables/table1.txt, write text re
+> place
+(note: file /workspace/output/tables/table1.txt not found)
+
+. 
+. file write tablecontent ("Table 1: Demographic and Clinical Characteristics b
+> y Vaccine Type") _n
+
+. 
+. * Exposure labelled columns
+. 
+. local lab1: label vaccine 1
+
+. local lab2: label vaccine 2
+
+. 
+. di "`lab1'"
+Pfizer
+
+. 
+. file write tablecontent _tab  ("Total")                                      
+>              _tab ///
+>                                                           ("`lab1'")         
+>                                      _tab ///
+>                                                           ("`lab2'")         
+>                                      _n
+
+. 
+. * DEMOGRAPHICS (more than one level, potentially missing) 
+. 
+. gen byte cons=1
+
+. tabulatevariable, variable(cons) min(1) max(1) 
+
+. file write tablecontent _n 
+
+. 
+. safetab vaccine_type
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |
+      Dose) |      Freq.     Percent        Cum.
+------------+-----------------------------------
+     Pfizer |  3,687,128       33.92       33.92
+AstraZeneca |  7,181,706       66.08      100.00
+------------+-----------------------------------
+      Total | 10,868,834      100.00
+
+. 
+. tabulatevariable, variable(agegroup) min(1) max(6) 
+
+. file write tablecontent _n 
+
+. 
+. safetab vaccine_type agegroup 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |                 Grouped age
+      Dose) |    18-<40     40-<50     50-<60     60-<70 |     Total
+------------+--------------------------------------------+----------
+     Pfizer |   840,214    831,925    289,566    310,378 | 3,363,098 
+AstraZeneca | 1,776,065  2,889,165    572,588    577,362 | 6,496,843 
+------------+--------------------------------------------+----------
+      Total | 2,616,279  3,721,090    862,154    887,740 | 9,859,941 
+
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |      Grouped age
+      Dose) |    70-<80        80+ |     Total
+------------+----------------------+----------
+     Pfizer |   320,174    770,841 | 3,363,098 
+AstraZeneca |   365,919    315,744 | 6,496,843 
+------------+----------------------+----------
+      Total |   686,093  1,086,585 | 9,859,941 
+
+. 
+. tabulatevariable, variable(male) min(1) max(2) 
+
+. file write tablecontent _n 
+
+. 
+. safetab vaccine_type male 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |         Male
+      Dose) |       Yes         No |     Total
+------------+----------------------+----------
+     Pfizer | 1,535,250  2,151,878 | 3,687,128 
+AstraZeneca | 3,452,286  3,729,420 | 7,181,706 
+------------+----------------------+----------
+      Total | 4,987,536  5,881,298 |10,868,834 
+
+. 
+. tabulatevariable, variable(ethnicity) min(1) max(5) missing 
+
+. file write tablecontent _n 
+
+. 
+. safetab vaccine_type ethnicity 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |                  Ethnicity
+      Dose) |     White      Mixed  Asian or       Black |     Total
+------------+--------------------------------------------+----------
+     Pfizer | 2,584,736     21,784    163,364     44,734 | 2,847,866 
+AstraZeneca | 5,012,386     46,315    336,541     96,917 | 5,567,993 
+------------+--------------------------------------------+----------
+      Total | 7,597,122     68,099    499,905    141,651 | 8,415,859 
+
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First | Ethnicity
+      Dose) |     Other |     Total
+------------+-----------+----------
+     Pfizer |    33,248 | 2,847,866 
+AstraZeneca |    75,834 | 5,567,993 
+------------+-----------+----------
+      Total |   109,082 | 8,415,859 
+
+. 
+. tabulatevariable, variable(imd) min(1) max(5) missing
+
+. file write tablecontent _n 
+
+. 
+. safetab vaccine_type imd 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |     Index of Multiple Deprivation (IMD)
+      Dose) |         0  1 least d          2          3 |     Total
+------------+--------------------------------------------+----------
+     Pfizer |    74,681    568,402    661,412    796,548 | 3,687,128 
+AstraZeneca |   146,280  1,183,495  1,312,587  1,528,910 | 7,181,706 
+------------+--------------------------------------------+----------
+      Total |   220,961  1,751,897  1,973,999  2,325,458 |10,868,834 
+
+
+    Type of |
+   COVID-19 |
+    Vaccine |   Index of Multiple
+     (First |   Deprivation (IMD)
+      Dose) |         4  5 most de |     Total
+------------+----------------------+----------
+     Pfizer |   804,795    781,290 | 3,687,128 
+AstraZeneca | 1,526,138  1,484,296 | 7,181,706 
+------------+----------------------+----------
+      Total | 2,330,933  2,265,586 |10,868,834 
+
+. 
+. tabulatevariable, variable(bmicat) min(1) max(3) missing
+
+. file write tablecontent _n 
+
+. 
+. safetab vaccine_type bmicat 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |           Grouped BMI
+      Dose) | Normal (<  Obese I -  Obese III |     Total
+------------+---------------------------------+----------
+     Pfizer | 2,237,306    868,257    154,273 | 3,259,836 
+AstraZeneca | 4,133,950  1,686,947    268,126 | 6,089,023 
+------------+---------------------------------+----------
+      Total | 6,371,256  2,555,204    422,399 | 9,348,859 
+
+. 
+. tabulatevariable, variable(care_home) min(1) max(3) missing
+
+. file write tablecontent _n 
+
+. 
+. safetab vaccine_type care_home  
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |                  Care Home
+      Dose) | Private H  Care Home  Nursing H  Care or N |     Total
+------------+--------------------------------------------+----------
+     Pfizer | 3,635,424      7,705      7,289        287 | 3,650,705 
+AstraZeneca | 7,065,844     26,775     19,937      1,178 | 7,113,734 
+------------+--------------------------------------------+----------
+      Total |10,701,268     34,480     27,226      1,465 |10,764,439 
+
+. 
+. * VTE variables (binary)
+. 
+. foreach varlist in  dvt                                     ///
+>                                         pe                                   
+>        ///
+>                                         cvt_vte                             /
+> //
+>                                         portal_vte                          /
+> //
+>                                         smv_vte                             /
+> //
+>                                         hepatic_vte                     ///
+>                                     vc_vte                                   
+>    ///
+>                                         other_vte                           /
+> //
+>                                         unspecified_vte             ///
+>                                         any_vte                             /
+> //
+>                                         recent_dvt                           
+>    ///
+>                                         recent_pe                            
+>    ///
+>                                         recent_cvt                           
+>    ///
+>                                         recent_portal                   ///
+>                                         recent_smv                           
+>    ///
+>                                         recent_hepatic                  ///
+>                                         recent_vc                            
+>    ///
+>                                         recent_other                    ///
+>                                         recent_unspecified              ///
+>                                         recent_any  {
+  2.                                                 
+.                                                 tabulatevariable, variable(`v
+> arlist') min(1) max(1)
+  3.                                                 
+.                                                 safetab vaccine_type `varlist
+> '
+  4.         
+.                                         }
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |          DVT
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,587,258     99,870 | 3,687,128 
+AstraZeneca | 7,048,403    133,303 | 7,181,706 
+------------+----------------------+----------
+      Total |10,635,661    233,173 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |          PE
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,620,198     66,930 | 3,687,128 
+AstraZeneca | 7,094,651     87,055 | 7,181,706 
+------------+----------------------+----------
+      Total |10,714,849    153,985 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |          CVT
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,686,024      1,104 | 3,687,128 
+AstraZeneca | 7,179,572      2,134 | 7,181,706 
+------------+----------------------+----------
+      Total |10,865,596      3,238 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |        Portal
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,685,606      1,522 | 3,687,128 
+AstraZeneca | 7,179,031      2,675 | 7,181,706 
+------------+----------------------+----------
+      Total |10,864,637      4,197 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |          SMV
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,686,924        204 | 3,687,128 
+AstraZeneca | 7,181,280        426 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,204        630 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |        Hepatic
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,686,941        187 | 3,687,128 
+AstraZeneca | 7,181,310        396 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,251        583 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |       Vena Cava
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,686,656        472 | 3,687,128 
+AstraZeneca | 7,180,934        772 | 7,181,706 
+------------+----------------------+----------
+      Total |10,867,590      1,244 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |         Other
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,686,183        945 | 3,687,128 
+AstraZeneca | 7,180,002      1,704 | 7,181,706 
+------------+----------------------+----------
+      Total |10,866,185      2,649 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |      Unspecified
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,681,216      5,912 | 3,687,128 
+AstraZeneca | 7,171,900      9,806 | 7,181,706 
+------------+----------------------+----------
+      Total |10,853,116     15,718 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |        Any VTE
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,530,459    156,669 | 3,687,128 
+AstraZeneca | 6,972,178    209,528 | 7,181,706 
+------------+----------------------+----------
+      Total |10,502,637    366,197 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |      Recent DVT
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,684,699      2,429 | 3,687,128 
+AstraZeneca | 7,177,863      3,843 | 7,181,706 
+------------+----------------------+----------
+      Total |10,862,562      6,272 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |       Recent PE
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,684,488      2,640 | 3,687,128 
+AstraZeneca | 7,176,807      4,899 | 7,181,706 
+------------+----------------------+----------
+      Total |10,861,295      7,539 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |      Recent CVT
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,687,087         41 | 3,687,128 
+AstraZeneca | 7,181,606        100 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,693        141 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |     Recent Portal
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,686,991        137 | 3,687,128 
+AstraZeneca | 7,181,455        251 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,446        388 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |      Recent SMV
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,687,119          9 | 3,687,128 
+AstraZeneca | 7,181,683         23 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,802         32 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |    Recent Hepatic
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,687,117         11 | 3,687,128 
+AstraZeneca | 7,181,670         36 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,787         47 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |   Recent Vena Cava
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,687,094         34 | 3,687,128 
+AstraZeneca | 7,181,640         66 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,734        100 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |     Recent Other
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,687,104         24 | 3,687,128 
+AstraZeneca | 7,181,664         42 | 7,181,706 
+------------+----------------------+----------
+      Total |10,868,768         66 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |  Recent Unspecified
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,686,782        346 | 3,687,128 
+AstraZeneca | 7,181,115        591 | 7,181,706 
+------------+----------------------+----------
+      Total |10,867,897        937 |10,868,834 
+0
+
+    Type of |
+   COVID-19 |
+    Vaccine |
+     (First |    Recent Any VTE
+      Dose) |        No        Yes |     Total
+------------+----------------------+----------
+     Pfizer | 3,681,862      5,266 | 3,687,128 
+AstraZeneca | 7,172,654      9,052 | 7,181,706 
+------------+----------------------+----------
+      Total |10,854,516     14,318 |10,868,834 
+
+.         
+. file write tablecontent _n _n
+
+. 
+. * VTE variables (continuous)
+. 
+. foreach varlist in time_since_dvt                               ///     
+>                    time_since_pe                ///
+>                    time_since_cvt               ///
+>                    time_since_portal            ///
+>                    time_since_smv               ///
+>                    time_since_hepatic           ///
+>                                    time_since_vc                             
+>    ///
+>                    time_since_other             ///
+>                    time_since_unspecified       ///
+>                    time_since_any    {
+  2.                                         
+.                                                 summarizevariable, variable(`
+> varlist')
+  3.                                         
+.                                                 summarize vaccine_type `varli
+> st'
+  4.                                         
+.                                    }    
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_since~t |    233,173    134.7998    161.3345   .0328542   1455.606
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_sinc~pe |    153,985    114.1708    146.1612   .0328542   1455.409
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_s~t_vte |      3,238    110.5757    136.8991   .0657084   1454.489
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_s~l_vte |      4,197    55.52694    103.4882   .0328542   1455.343
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_s~v_vte |        630    68.40643    119.0742   .1971253    1454.62
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_~ic_vte |        583    46.83776    95.61894    .164271   1451.269
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_~vc_vte |      1,244    45.88045    80.80821   .0657084   1454.554
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_s~r_vte |      2,649    114.6004    142.5719   .0657084   1454.916
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_s~d_vte |     15,718    51.48466    94.19673   .0328542   1455.014
+
+    Variable |        Obs        Mean    Std. Dev.       Min        Max
+-------------+---------------------------------------------------------
+vaccine_type | 10,868,834    1.660761    .4734509          1          2
+time_since~y |    366,197    128.4318    158.2209   .0328542   1455.606
+
+. 
+. file close tablecontent
+
+. 
+. * COMORBIDITIES [PLACEHOLDER]
+. 
+. * Close log file 
+. log close
+      name:  <unnamed>
+       log:  /workspace/output/logs/02_baseline_characteristics.log
+  log type:  text
+ closed on:  29 Apr 2021, 18:18:20
+-------------------------------------------------------------------------------
