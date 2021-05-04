@@ -71,8 +71,6 @@ datacheck any_covid_vaccine_date <= pfizer_covid_vaccine_date if pfizer_covid_va
 gen vaccine_date_check = min(pfizer_covid_vaccine_date, az_covid_vaccine_date)
 datacheck vaccine_date_check == any_covid_vaccine_date, nolist 
 
-* [PLACEHOLDER - data cleaning if more than one vaccine at same date]
-
 * generate vaccine variables 
 gen any_covid_vaccine = (any_covid_vaccine_date != .) 
 gen any_pfizer_vaccine = (pfizer_covid_vaccine_date != .) 
@@ -92,8 +90,6 @@ label values vaccine_type vaccine
 
 tab vaccine_type, m
 summarize(any_covid_vaccine_date), format 
-
-* [PLACEHOLDER - data cleaning if missing vaccine type]
 
 * VTE TYPE 
 * Convert dates (need to add hospital categorisation)

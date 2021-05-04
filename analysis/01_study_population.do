@@ -51,10 +51,13 @@ datacheck has_died == 0, nolist
 datacheck any_covid_vaccine_date != ., nolist 
 
 * Known vaccine type 
-datacheck inlist(vaccine_type, 1, 0, .), nolist
+datacheck inlist(vaccine_type, 1, 2, .), nolist
 noi di "DROP MISSING VACCINE TYPE"
-
 drop if vaccine_type == . 
+
+* Not AZ & Pfizer at same date 
+noi di "DROP DUPLICATE DATES"
+drop if az_covid_vaccine_date == pfizer_covid_vaccine_date 
 
 * Confirm one row per patient 
 duplicates tag patient_id, generate(dup_check)
