@@ -31,8 +31,8 @@ study_population <- study_population %>%
   filter(!is.na(any_covid_vaccine_date)) %>% 
   filter(!is.na(vaccine_type)) %>% 
   # create a time variable (week since vaccination programme)
-  mutate(weekdiff = difftime((dmy(any_covid_vaccine_date)),(dmy("08dec2020")), unit = "weeks"), 
-         week = floor(weekdiff), 
+  mutate(weekdiff = difftime((dmy(any_covid_vaccine_date)),(dmy("08dec2020")), unit = "months"), 
+         month = floor(monthdiff), 
          care_home_cat = case_when(
            care_home_type == "CareHome" ~ "Care Home", 
            care_home_type == "CareOrNursingHome" ~ "Care Home", 
@@ -43,7 +43,7 @@ study_population <- study_population %>%
 # Plot 1: Age over time ---------------------------------------------------
 dodge <- position_dodge(width = 1)
 
-age_plot <- ggplot(study_population, aes(fill = vaccine_type, x=as.factor(week), y=age)) + 
+age_plot <- ggplot(study_population, aes(fill = vaccine_type, x=as.factor(month), y=age)) + 
   geom_violin(trim=FALSE, position = dodge, alpha = 0.4) + 
   geom_boxplot(width=0.1, position = dodge, alpha = 0.6) + 
   scale_fill_viridis(discrete = "T", name = "") +

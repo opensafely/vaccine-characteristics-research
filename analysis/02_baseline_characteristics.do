@@ -179,8 +179,9 @@ file write tablecontent ("Table 1: Demographic and Clinical Characteristics by V
 
 * Exposure labelled columns
 
-local lab1: label vaccine_type 1
-local lab2: label vaccine_type 2
+local lab1: label (vaccine_type) 1, strict
+local lab2: label (vaccine_type) 2, strict
+
 
 file write tablecontent _tab _tab   ("Total")			    _tab ///
 									("`lab1'")			   	_tab ///
