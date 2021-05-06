@@ -130,9 +130,9 @@ foreach var of varlist dvt pe cvt_vte portal_vte hepatic_vte vc_vte unspecified_
 	gen `var'_hospital_any = (`var'_hospital != .)
 	
 	* Apply a yes/no label to all of the binary variables for printing in tables 
-	label define `var' 1 "Yes" 0 "No"
-	label values `var'_label `var' 
-	label values `var'_gp_any `var' _label
+	label define `var'_label 1 "Yes" 0 "No"
+	label values `var' `var'_label 
+	label values `var'_gp_any `var'_label
 	label values `var'_hospital_any `var'_label 
 	
 	* Basic cross tabulations for sense checking variables 
@@ -230,7 +230,7 @@ replace agegroup=6 if age>=75 & age<80
 replace agegroup=7 if age>=80
 
 label define agegroup 	1 "16-<30" ///
-						2 "30-<50"
+						2 "30-<50" ///
 						3 "50-<65" ///
 						4 "65-<70" ///
 						5 "70-<75" ///

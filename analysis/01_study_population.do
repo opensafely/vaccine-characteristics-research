@@ -18,6 +18,7 @@ OTHER OUTPUT: 			logfile, printed to folder output/logs
 * use input and output file names from project.yaml 
 local inputfile `1'
 local outputfile `2'
+local outputfile2 `3'
 
 * create folders that do not exist on server 
 capture	mkdir "`c(pwd)'/output/logs"
@@ -51,9 +52,9 @@ datacheck has_died == 0, nolist
 datacheck any_covid_vaccine_date != ., nolist 
 
 * Known vaccine type 
-datacheck inlist(vaccine_type, 1, 2, .), nolist
+datacheck inlist(vaccine_type, 1, 2, 3, .), nolist
 noi di "DROP MISSING VACCINE TYPE"
-drop if vaccine_type == . 
+drop if vaccine_type == 3 
 
 * Not AZ & Pfizer at same date 
 noi di "DROP DUPLICATE DATES"
@@ -67,6 +68,8 @@ drop dup_check
 * EXPORT DATA=================================================================*/ 
 
 save `c(pwd)'/`outputfile', replace
+export delimited using `c(pwd)'/`outputfile2', replace 
+
 
 * CLOSE LOG===================================================================*/ 
 

@@ -76,7 +76,7 @@ syntax, variable(varname) [level(string)] condition(string)
 			file write tablecontent ("`vlab'") _tab 
 			}
 	else {
-			file write tablecontent ("missing") _tab
+			file write tablecontent ("Missing") _tab
 			}
 	
 	* create denominator and print total 
@@ -179,10 +179,8 @@ file write tablecontent ("Table 1: Demographic and Clinical Characteristics by V
 
 * Exposure labelled columns
 
-local lab1: label vaccine 1
-local lab2: label vaccine 2
-
-di "`lab1'"
+local lab1: label vaccine_type 1
+local lab2: label vaccine_type 2
 
 file write tablecontent _tab _tab   ("Total")			    _tab ///
 									("`lab1'")			   	_tab ///
@@ -196,7 +194,7 @@ file write tablecontent _n
 
 safetab vaccine_type
 
-tabulatevariable, variable(agegroup) min(1) max(6) 
+tabulatevariable, variable(agegroup) min(1) max(7) 
 file write tablecontent _n 
 
 safetab vaccine_type agegroup, col 
