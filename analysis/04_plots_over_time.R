@@ -31,8 +31,7 @@ study_population <- study_population %>%
   filter(!is.na(any_covid_vaccine_date)) %>% 
   filter(!is.na(vaccine_type)) %>% 
   # create a time variable (week since vaccination programme)
-  mutate(weekdiff = difftime((dmy(any_covid_vaccine_date)),(dmy("08dec2020")), unit = "months"), 
-         month = floor(monthdiff), 
+  mutate(month = month((dmy(any_covid_vaccine_date))), 
          care_home_cat = case_when(
            care_home_type == "CareHome" ~ "Care Home", 
            care_home_type == "CareOrNursingHome" ~ "Care Home", 
@@ -48,7 +47,7 @@ age_plot <- ggplot(study_population, aes(fill = vaccine_type, x=as.factor(month)
   geom_boxplot(width=0.1, position = dodge, alpha = 0.6) + 
   scale_fill_viridis(discrete = "T", name = "") +
   theme_minimal() + 
-  xlab("Week since start of vaccination programme") +
+  xlab("Month since start of vaccination programme") +
   ylab("Age at First Vaccination Dose (Years)") + 
   ylim(0,130) 
   
