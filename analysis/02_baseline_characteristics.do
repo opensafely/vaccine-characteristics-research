@@ -76,7 +76,7 @@ syntax, variable(varname) [level(string)] condition(string)
 			file write tablecontent ("`vlab'") _tab 
 			}
 	else {
-			file write tablecontent ("missing") _tab
+			file write tablecontent ("Missing") _tab
 			}
 	
 	* create denominator and print total 
@@ -87,21 +87,21 @@ syntax, variable(varname) [level(string)] condition(string)
 	qui count if `variable' `condition'
 	local rowdenom = r(N)
 	local colpct = 100*(r(N)/`overalldenom')
-	file write tablecontent %9.0gc (`rowdenom')  (" (") %3.1f (`colpct') (")") _tab
+	file write tablecontent %15.0gc (`rowdenom')  (" (") %3.2f (`colpct') (")") _tab
 
 	* first exposure value 
 	qui count if vaccine_type == 1 
 	local rowdenom = r(N)
 	qui count if vaccine_type == 1 & `variable' `condition'
 	local pct = 100*(r(N)/`rowdenom') 
-	file write tablecontent %9.0gc (r(N)) (" (") %3.1f (`pct') (")") _tab
+	file write tablecontent %15.0gc (r(N)) (" (") %3.2f (`pct') (")") _tab
 
 	* second exposure value 
 	qui count if vaccine_type == 2
 	local rowdenom = r(N)
 	qui count if vaccine_type == 2 & `variable' `condition'
 	local pct = 100*(r(N)/`rowdenom')
-	file write tablecontent %9.0gc (r(N)) (" (") %3.1f  (`pct') (")") _n
+	file write tablecontent %15.0gc (r(N)) (" (") %3.2f  (`pct') (")") _n
 	
 end
 
@@ -179,14 +179,12 @@ file write tablecontent ("Table 1: Demographic and Clinical Characteristics by V
 
 * Exposure labelled columns
 
-local lab1: label vaccine 1
-local lab2: label vaccine 2
+local lab1: label vaccine_type 1
+local lab2: label vaccine_type 2
 
-di "`lab1'"
-
-file write tablecontent _tab  ("Total")				  			  _tab ///
-							  ("`lab1'")			 			  _tab ///
-							  ("`lab2'")  						  _n
+file write tablecontent _tab _tab   ("Total")			    _tab ///
+									("`lab1'")			   	_tab ///
+									("`lab2'")  			_n
 
 * DEMOGRAPHICS (more than one level, potentially missing) 
 
@@ -196,35 +194,35 @@ file write tablecontent _n
 
 safetab vaccine_type
 
-tabulatevariable, variable(agegroup) min(1) max(6) 
+tabulatevariable, variable(agegroup) min(1) max(7) 
 file write tablecontent _n 
 
-safetab vaccine_type agegroup 
+safetab vaccine_type agegroup, col 
 
 tabulatevariable, variable(male) min(1) max(2) 
 file write tablecontent _n 
 
-safetab vaccine_type male 
+safetab vaccine_type male, col
 
 tabulatevariable, variable(ethnicity) min(1) max(5) missing 
 file write tablecontent _n 
 
-safetab vaccine_type ethnicity 
+safetab vaccine_type ethnicity, col 
 
 tabulatevariable, variable(imd) min(1) max(5) missing
 file write tablecontent _n 
 
-safetab vaccine_type imd 
+safetab vaccine_type imd, col 
 
 tabulatevariable, variable(bmicat) min(1) max(3) missing
 file write tablecontent _n 
 
-safetab vaccine_type bmicat 
+safetab vaccine_type bmicat, col 
 
 tabulatevariable, variable(care_home) min(1) max(3) missing
 file write tablecontent _n 
 
-safetab vaccine_type care_home  
+safetab vaccine_type care_home, col  
 
 * VTE variables (binary)
 
@@ -251,7 +249,7 @@ foreach varlist in  dvt					    ///
 						
 						tabulatevariable, variable(`varlist') min(1) max(1)
 						
-						safetab vaccine_type `varlist'
+						safetab vaccine_type `varlist', col
 	
 					}
 	
@@ -271,8 +269,8 @@ foreach varlist in time_since_dvt 				///
                    time_since_any    {
 				   	
 						summarizevariable, variable(`varlist')
-					
-						summarize vaccine_type `varlist'
+						summarize `variable' if vaccine_type == 1
+						summarize `variable' if vaccine_type == 2
 					
 				   }	
 

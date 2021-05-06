@@ -61,17 +61,23 @@ foreach var of varlist any_covid_vaccine_date ///
 * logical checks on dates (use datacheck instead of assert to enable run on dummy data)
 * include nolist option to avoid printing out patient level data to the log in case of contradiction 
 
-datacheck any_covid_vaccine_date != . if pfizer_covid_vaccine_date != ., nolist 
+* check that any covid vaccine date exists if pfizer covid vaccine date exists 
+datacheck any_covid_vaccine_date != . if pfizer_covid_vaccine_date != ., nolist
+* check that any covid vaccine date exists if az vaccine date exists  
 datacheck any_covid_vaccine_date != . if az_covid_vaccine_date != ., nolist 
+* check that the az covid vaccine date is not the same as the pfizer date (if not missing)
 datacheck az_covid_vaccine_date != pfizer_covid_vaccine_date if az_covid_vaccine_date != ., nolist 
 
+* check that any covid vaccine does not occur after the AZ covid vaccine date, if AZ covid vaccine date is not missing
 datacheck any_covid_vaccine_date <= az_covid_vaccine_date if az_covid_vaccine_date != ., nolist  
+* check that any covid vaccine date does not occur after the Pfizer covid vaccine date, if Pfizer covid vaccine date is not missing 
 datacheck any_covid_vaccine_date <= pfizer_covid_vaccine_date if pfizer_covid_vaccine_date != ., nolist 
 
+* double check that any covid vaccine date has extracted the minimum date 
 gen vaccine_date_check = min(pfizer_covid_vaccine_date, az_covid_vaccine_date)
 datacheck vaccine_date_check == any_covid_vaccine_date, nolist 
-
-* [PLACEHOLDER - data cleaning if more than one vaccine at same date]
+* confirm that any contradications above are due to missing vaccine type 
+datacheck vaccine_date_check == any_covid_vaccine_date if vaccine_date_check != . , nolist 
 
 * generate vaccine variables 
 gen any_covid_vaccine = (any_covid_vaccine_date != .) 
@@ -83,17 +89,17 @@ tab any_covid_vaccine any_az_vaccine
 tab any_pfizer_vaccine any_az_vaccine
 
 * type of vaccine at first dose 
+* Note, those with both pfizer and az on the same date will be excluded in the later program (01_study_population)
 gen vaccine_type = 1 if pfizer_covid_vaccine_date == any_covid_vaccine_date & pfizer_covid_vaccine_date != . 
 replace vaccine_type = 2 if az_covid_vaccine_date == any_covid_vaccine_date & az_covid_vaccine_date != . 
+replace vaccine_type = 3 if az_covid_vaccine_date == pfizer_covid_vaccine_date & az_covid_vaccine_date != . 
 
-label define vaccine 1 "Pfizer" 2 "AstraZeneca"
+label define vaccine 1 "Pfizer" 2 "AstraZeneca" 3 "Both"
 label values vaccine_type vaccine 
 
 
 tab vaccine_type, m
 summarize(any_covid_vaccine_date), format 
-
-* [PLACEHOLDER - data cleaning if missing vaccine type]
 
 * VTE TYPE 
 * Convert dates (need to add hospital categorisation)
@@ -118,12 +124,16 @@ foreach var of varlist dvt_gp dvt_hospital ///
 * create indicator variables and apply labels 
 foreach var of varlist dvt pe cvt_vte portal_vte hepatic_vte vc_vte unspecified_vte { 
 	
+	*indicator variable for GP clot 
 	gen `var'_gp_any = (`var'_gp != .)
+	* indicator variable for hospital clot 
 	gen `var'_hospital_any = (`var'_hospital != .)
-	label define `var' 1 "Yes" 0 "No"
-	label values `var' `var' 
-	label values `var'_gp_any `var' 
-	label values `var'_hospital_any `var' 
+	
+	* Apply a yes/no label to all of the binary variables for printing in tables 
+	label define `var'_label 1 "Yes" 0 "No"
+	label values `var' `var'_label 
+	label values `var'_gp_any `var'_label
+	label values `var'_hospital_any `var'_label 
 	
 	* Basic cross tabulations for sense checking variables 
 	
@@ -140,8 +150,8 @@ foreach var of varlist dvt pe cvt_vte portal_vte hepatic_vte vc_vte unspecified_
 
 foreach var of varlist smv_vte other_vte { 
 	
-	label define `var' 1 "Yes" 0 "No"
-	label values `var' `var' 
+	label define `var'_label 1 "Yes" 0 "No"
+	label values `var' `var'_label 
 
 	safetab `var' 
 
@@ -211,19 +221,21 @@ label values imd imd
 
 * Age 
 * classified as 16-49, 50-64, 65-69, 70-74, 75-79, or 80-105 years 
-gen     agegroup=1 if age>=16 & age<49
-replace agegroup=2 if age>=50 & age<64
-replace agegroup=3 if age>=65 & age<69
-replace agegroup=4 if age>=70 & age<74
-replace agegroup=5 if age>=75 & age<79
-replace agegroup=6 if age>=80
+gen     agegroup=1 if age>=16 & age<30
+replace agegroup=2 if age>=30 & age<50
+replace agegroup=3 if age>=50 & age<65
+replace agegroup=4 if age>=65 & age<70
+replace agegroup=5 if age>=70 & age<75
+replace agegroup=6 if age>=75 & age<80
+replace agegroup=7 if age>=80
 
-label define agegroup 	1 "18-<40" ///
-						2 "40-<50" ///
-						3 "50-<60" ///
-						4 "60-<70" ///
-						5 "70-<80" ///
-						6 "80+"
+label define agegroup 	1 "16-<30" ///
+						2 "30-<50" ///
+						3 "50-<65" ///
+						4 "65-<70" ///
+						5 "70-<75" ///
+						6 "75-<80" ///
+						7 "80+"
 						
 label values agegroup agegroup
 

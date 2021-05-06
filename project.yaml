@@ -23,11 +23,12 @@ actions:
         log: output/logs/00_data_management.log
 
   01_study_population:
-    run: stata-mp:latest analysis/01_study_population.do output/tempdata/temp_data.dta output/tempdata/study_population
+    run: stata-mp:latest analysis/01_study_population.do output/tempdata/temp_data.dta output/tempdata/study_population output/tempdata/study_population.csv
     needs: [00_data_management] 
     outputs:
       highly_sensitive:
         data: output/tempdata/study_population.dta
+        csv: output/tempdata/study_population.csv
       moderately_sensitive:
         log: output/logs/01_study_population.log
 
@@ -38,3 +39,21 @@ actions:
       moderately_sensitive:
         log: output/logs/02_baseline_characteristics.log
         table: output/tables/table1.txt
+
+  03_logistic_regression:
+    run: stata-mp:latest analysis/03_logistic_regression.do output/tempdata/study_population.dta output/tables/table2.txt
+    needs: [01_study_population] 
+    outputs:
+      moderately_sensitive:
+        log: output/logs/03_logistic_regression.log
+        table: output/tables/table2.txt
+
+
+  04_plots_over_time:
+    run: r:latest analysis/04_plots_over_time.R 
+    needs: [01_study_population] 
+    outputs:
+      moderately_sensitive:
+        table: output/plots/plot1.png
+
+
