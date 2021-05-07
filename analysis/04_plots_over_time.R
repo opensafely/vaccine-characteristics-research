@@ -31,27 +31,32 @@ study_population <- study_population %>%
   filter(!is.na(any_covid_vaccine_date)) %>% 
   filter(!is.na(vaccine_type)) %>% 
   # create a time variable (week since vaccination programme)
-  mutate(month = month((dmy(any_covid_vaccine_date))), 
+  mutate(month = month((dmy(any_covid_vaccine_date)), label = TRUE),
          care_home_cat = case_when(
            care_home_type == "CareHome" ~ "Care Home", 
            care_home_type == "CareOrNursingHome" ~ "Care Home", 
            care_home_type == "NursingHome" ~ "Care Home", 
            care_home_type == "PrivateHome" ~ "Private Home", 
-           TRUE ~ "Private Home"))
+           TRUE ~ "Private Home")) %>% 
+  mutate(month = factor(month, levels = c("Dec", "Jan", "Feb", "Mar", "Apr", "May"))) 
 
 # Plot 1: Age over time ---------------------------------------------------
-dodge <- position_dodge(width = 1)
-
-age_plot <- ggplot(study_population, aes(fill = vaccine_type, x=as.factor(month), y=age)) + 
-  geom_violin(trim=FALSE, position = dodge, alpha = 0.4) + 
-  geom_boxplot(width=0.1, position = dodge, alpha = 0.6) + 
+age_plot <- ggplot(study_population, aes(age, fill = vaccine_type)) + 
+  geom_histogram(binwidth = 5, alpha = 0.5, color = "gray80") + 
   scale_fill_viridis(discrete = "T", name = "") +
+  scale_color_viridis() + 
   theme_minimal() + 
-  xlab("Month since start of vaccination programme") +
-  ylab("Age at First Vaccination Dose (Years)") + 
-  ylim(0,130) 
-  
+  xlab("Age") + 
+  ylab("Number of People") +
+  facet_wrap(month ~ ., 
+             nrow = 6, 
+             strip.position = c("bottom"))
+
 png(filename = "./output/plots/plot1.png")
 age_plot
 dev.off()
+
+
+
+
 

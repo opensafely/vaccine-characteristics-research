@@ -250,7 +250,7 @@ foreach varlist in  dvt					    ///
 						
 						tabulatevariable, variable(`varlist') min(1) max(1)
 						
-						safetab vaccine_type `varlist', col
+						safetab vaccine_type `varlist', row
 	
 					}
 	
@@ -270,8 +270,8 @@ foreach varlist in time_since_dvt 				///
                    time_since_any    {
 				   	
 						summarizevariable, variable(`varlist')
-						summarize `variable' if vaccine_type == 1
-						summarize `variable' if vaccine_type == 2
+						summarize `varlist' if vaccine_type == 1
+						summarize `varlist' if vaccine_type == 2
 					
 				   }	
 

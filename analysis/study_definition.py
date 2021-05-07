@@ -19,7 +19,7 @@ study = StudyDefinition(
     # configure the expectations framework
     default_expectations={
         "date": {"earliest": "1900-01-01", "latest": "today"},
-        "rate": "exponential_increase",
+        "rate": "uniform",
         "incidence" : 0.2
     },
 
@@ -51,7 +51,7 @@ study = StudyDefinition(
         return_expectations={
             "date": {
                 "earliest": "2020-12-08",  # first vaccine administered on the 8/12
-                "latest": "2021-02-01",
+                "latest": "2021-05-01",
             }
         },
     ),
@@ -66,7 +66,7 @@ study = StudyDefinition(
         return_expectations={
             "date": {
                 "earliest": "2020-12-08",  # first vaccine administered on the 8/12
-                "latest": "2021-02-01",
+                "latest": "2021-05-01",
             }
         },
     ),
@@ -81,7 +81,7 @@ study = StudyDefinition(
         return_expectations={
             "date": {
                 "earliest": "2020-12-08",  # first vaccine administered on the 8/12
-                "latest": "2021-02-01",
+                "latest": "2021-05-01",
             }
         },
     ),
