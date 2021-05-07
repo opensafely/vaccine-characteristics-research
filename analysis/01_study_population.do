@@ -53,8 +53,11 @@ datacheck any_covid_vaccine_date != ., nolist
 
 * Known vaccine type 
 datacheck inlist(vaccine_type, 1, 2, 3, .), nolist
-noi di "DROP MISSING VACCINE TYPE"
+noi di "DROP IF BOTH VACCINES"
 drop if vaccine_type == 3 
+
+noi di "DROP IF MISSING VACCINES"
+drop if vaccine_type == . 
 
 * Not AZ & Pfizer at same date 
 noi di "DROP DUPLICATE DATES"

@@ -198,32 +198,32 @@ safetab vaccine_type
 tabulatevariable, variable(agegroup) min(1) max(7) 
 file write tablecontent _n 
 
-safetab vaccine_type agegroup, col 
+safetab vaccine_type agegroup, row 
 
 tabulatevariable, variable(male) min(1) max(2) 
 file write tablecontent _n 
 
-safetab vaccine_type male, col
+safetab vaccine_type male, row
 
 tabulatevariable, variable(ethnicity) min(1) max(5) missing 
 file write tablecontent _n 
 
-safetab vaccine_type ethnicity, col 
+safetab vaccine_type ethnicity, row 
 
 tabulatevariable, variable(imd) min(1) max(5) missing
 file write tablecontent _n 
 
-safetab vaccine_type imd, col 
+safetab vaccine_type imd, row 
 
 tabulatevariable, variable(bmicat) min(1) max(3) missing
 file write tablecontent _n 
 
-safetab vaccine_type bmicat, col 
+safetab vaccine_type bmicat, row 
 
 tabulatevariable, variable(care_home) min(1) max(3) missing
 file write tablecontent _n 
 
-safetab vaccine_type care_home, col  
+safetab vaccine_type care_home, row  
 
 * VTE variables (binary)
 
@@ -250,7 +250,7 @@ foreach varlist in  dvt					    ///
 						
 						tabulatevariable, variable(`varlist') min(1) max(1)
 						
-						safetab vaccine_type `varlist', col
+						safetab vaccine_type `varlist', row
 	
 					}
 	
@@ -270,8 +270,8 @@ foreach varlist in time_since_dvt 				///
                    time_since_any    {
 				   	
 						summarizevariable, variable(`varlist')
-						summarize `variable' if vaccine_type == 1
-						summarize `variable' if vaccine_type == 2
+						summarize `varlist' if vaccine_type == 1
+						summarize `varlist' if vaccine_type == 2
 					
 				   }	
 

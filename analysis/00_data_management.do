@@ -216,6 +216,7 @@ label values ethnicity ethnicity
 
 * IMD 
 * grouping is done in the study_definition 
+replace imd = . if imd == 0 
 label define imd 1 "1 least deprived" 2 "2" 3 "3" 4 "4" 5 "5 most deprived" .u "Unknown"
 label values imd imd 
 
