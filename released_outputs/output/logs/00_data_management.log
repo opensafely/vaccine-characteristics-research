@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /workspace/output/logs/00_data_management.log
   log type:  text
- opened on:  29 Apr 2021, 17:52:39
+ opened on:   6 May 2021, 12:30:54
 
 . 
 . 
@@ -10,7 +10,7 @@
 > =*/ 
 . 
 . import delimited `c(pwd)'/`inputfile', clear
-(40 vars, 10,889,237 obs)
+(40 vars, 11,143,160 obs)
 
 . 
 . * DATA CLEANING==============================================================
@@ -33,8 +33,8 @@
   6.                                                 format %d `var'
   7.                                                         
 .                                            }
-(7,194,964 missing values generated)
-(3,698,025 missing values generated)
+(7,425,748 missing values generated)
+(3,735,381 missing values generated)
 
 . 
 . * logical checks on dates (use datacheck instead of assert to enable run on d
@@ -42,34 +42,48 @@
 . * include nolist option to avoid printing out patient level data to the log i
 > n case of contradiction 
 . 
+. * check that any covid vaccine date exists if pfizer covid vaccine date exist
+> s 
 . datacheck any_covid_vaccine_date != . if pfizer_covid_vaccine_date != ., noli
-> st 
+> st
 
+. * check that any covid vaccine date exists if az vaccine date exists  
 . datacheck any_covid_vaccine_date != . if az_covid_vaccine_date != ., nolist 
 
+. * check that the az covid vaccine date is not the same as the pfizer date (if
+>  not missing)
 . datacheck az_covid_vaccine_date != pfizer_covid_vaccine_date if az_covid_vacc
 > ine_date != ., nolist 
 
- (3212 contradictions)
+ (3555 contradictions)
 
 . 
+. * check that any covid vaccine does not occur after the AZ covid vaccine date
+> , if AZ covid vaccine date is not missing
 . datacheck any_covid_vaccine_date <= az_covid_vaccine_date if az_covid_vaccine
 > _date != ., nolist  
 
+. * check that any covid vaccine date does not occur after the Pfizer covid vac
+> cine date, if Pfizer covid vaccine date is not missing 
 . datacheck any_covid_vaccine_date <= pfizer_covid_vaccine_date if pfizer_covid
 > _vaccine_date != ., nolist 
 
 . 
+. * double check that any covid vaccine date has extracted the minimum date 
 . gen vaccine_date_check = min(pfizer_covid_vaccine_date, az_covid_vaccine_date
 > )
-(20,386 missing values generated)
+(37,894 missing values generated)
 
 . datacheck vaccine_date_check == any_covid_vaccine_date, nolist 
 
- (20403 contradictions)
+ (37912 contradictions)
 
-. 
-. * [PLACEHOLDER - data cleaning if more than one vaccine at same date]
+. * confirm that any contradications above are due to missing vaccine type 
+. datacheck vaccine_date_check == any_covid_vaccine_date if vaccine_date_check 
+> != . , nolist 
+
+ (18 contradictions)
+
 . 
 . * generate vaccine variables 
 . gen any_covid_vaccine = (any_covid_vaccine_date != .) 
@@ -84,41 +98,47 @@
 any_covid_ |  any_pfizer_vaccine
    vaccine |         0          1 |     Total
 -----------+----------------------+----------
-         1 | 7,194,964  3,694,273 |10,889,237 
+         1 | 7,425,748  3,717,412 |11,143,160 
 -----------+----------------------+----------
-     Total | 7,194,964  3,694,273 |10,889,237 
+     Total | 7,425,748  3,717,412 |11,143,160 
 
 . tab any_covid_vaccine any_az_vaccine
 
 any_covid_ |    any_az_vaccine
    vaccine |         0          1 |     Total
 -----------+----------------------+----------
-         1 | 3,698,025  7,191,212 |10,889,237 
+         1 | 3,735,381  7,407,779 |11,143,160 
 -----------+----------------------+----------
-     Total | 3,698,025  7,191,212 |10,889,237 
+     Total | 3,735,381  7,407,779 |11,143,160 
 
 . tab any_pfizer_vaccine any_az_vaccine
 
 any_pfizer |    any_az_vaccine
   _vaccine |         0          1 |     Total
 -----------+----------------------+----------
-         0 |    20,386  7,174,578 | 7,194,964 
-         1 | 3,677,639     16,634 | 3,694,273 
+         0 |    37,894  7,387,854 | 7,425,748 
+         1 | 3,697,487     19,925 | 3,717,412 
 -----------+----------------------+----------
-     Total | 3,698,025  7,191,212 |10,889,237 
+     Total | 3,735,381  7,407,779 |11,143,160 
 
 . 
 . * type of vaccine at first dose 
+. * Note, those with both pfizer and az on the same date will be excluded in th
+> e later program (01_study_population)
 . gen vaccine_type = 1 if pfizer_covid_vaccine_date == any_covid_vaccine_date &
 >  pfizer_covid_vaccine_date != . 
-(7,198,897 missing values generated)
+(7,430,571 missing values generated)
 
 . replace vaccine_type = 2 if az_covid_vaccine_date == any_covid_vaccine_date &
 >  az_covid_vaccine_date != . 
-(7,181,706 real changes made)
+(7,396,214 real changes made)
+
+. replace vaccine_type = 3 if az_covid_vaccine_date == pfizer_covid_vaccine_dat
+> e & az_covid_vaccine_date != . 
+(3,555 real changes made)
 
 . 
-. label define vaccine 1 "Pfizer" 2 "AstraZeneca"
+. label define vaccine 1 "Pfizer" 2 "AstraZeneca" 3 "Both"
 
 . label values vaccine_type vaccine 
 
@@ -129,20 +149,19 @@ any_pfizer |    any_az_vaccine
 vaccine_typ |
           e |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-     Pfizer |  3,687,128       33.86       33.86
-AstraZeneca |  7,181,706       65.95       99.81
-          . |     20,403        0.19      100.00
+     Pfizer |  3,709,034       33.29       33.29
+AstraZeneca |  7,392,659       66.34       99.63
+       Both |      3,555        0.03       99.66
+          . |     37,912        0.34      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 
 . summarize(any_covid_vaccine_date), format 
 
     Variable |        Obs        Mean    Std. Dev.       Min        Max
 -------------+---------------------------------------------------------
-any_covid~te | 10,889,237   18feb2021    27.83565  07dec2020  21apr2021
+any_covid~te | 11,143,160   19feb2021    29.06225  07dec2020  29apr2021
 
-. 
-. * [PLACEHOLDER - data cleaning if missing vaccine type]
 . 
 . * VTE TYPE 
 . * Convert dates (need to add hospital categorisation)
@@ -168,34 +187,39 @@ any_covid~te | 10,889,237   18feb2021    27.83565  07dec2020  21apr2021
   6.                                                 format %d `var'
   7.                                                 
 .                                            }
-(10,672,691 missing values generated)
-(10,842,807 missing values generated)
-(10,743,164 missing values generated)
-(10,834,440 missing values generated)
-(10,886,463 missing values generated)
-(10,887,904 missing values generated)
-(10,886,285 missing values generated)
-(10,886,510 missing values generated)
-(10,888,607 missing values generated)
-(10,889,008 missing values generated)
-(10,888,755 missing values generated)
-(10,888,804 missing values generated)
-(10,888,270 missing values generated)
-(10,886,040 missing values generated)
-(10,876,669 missing values generated)
-(10,886,586 missing values generated)
+(10,925,418 missing values generated)
+(11,096,496 missing values generated)
+(10,996,406 missing values generated)
+(11,088,159 missing values generated)
+(11,140,372 missing values generated)
+(11,141,818 missing values generated)
+(11,140,187 missing values generated)
+(11,140,413 missing values generated)
+(11,142,527 missing values generated)
+(11,142,931 missing values generated)
+(11,142,674 missing values generated)
+(11,142,725 missing values generated)
+(11,142,187 missing values generated)
+(11,139,893 missing values generated)
+(11,130,509 missing values generated)
+(11,140,496 missing values generated)
 
 . 
 . * create indicator variables and apply labels 
 . foreach var of varlist dvt pe cvt_vte portal_vte hepatic_vte vc_vte unspecifi
 > ed_vte { 
   2.         
+.         *indicator variable for GP clot 
 .         gen `var'_gp_any = (`var'_gp != .)
-  3.         gen `var'_hospital_any = (`var'_hospital != .)
-  4.         label define `var' 1 "Yes" 0 "No"
-  5.         label values `var' `var' 
-  6.         label values `var'_gp_any `var' 
-  7.         label values `var'_hospital_any `var' 
+  3.         * indicator variable for hospital clot 
+.         gen `var'_hospital_any = (`var'_hospital != .)
+  4.         
+.         * Apply a yes/no label to all of the binary variables for printing in
+>  tables 
+.         label define `var'_label 1 "Yes" 0 "No"
+  5.         label values `var' `var'_label 
+  6.         label values `var'_gp_any `var'_label
+  7.         label values `var'_hospital_any `var'_label 
   8.         
 .         * Basic cross tabulations for sense checking variables 
 .         
@@ -211,390 +235,390 @@ any_covid~te | 10,889,237   18feb2021    27.83565  07dec2020  21apr2021
 
  dvt_gp_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,672,691       98.01       98.01
-        Yes |    216,546        1.99      100.00
+         No | 10,925,418       98.05       98.05
+        Yes |    217,742        1.95      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 dvt_hospita |
       l_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,842,807       99.57       99.57
-        Yes |     46,430        0.43      100.00
+         No | 11,096,496       99.58       99.58
+        Yes |     46,664        0.42      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
         dvt |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,656,006       97.86       97.86
-        Yes |    233,231        2.14      100.00
+         No | 10,908,636       97.90       97.90
+        Yes |    234,524        2.10      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
            |          dvt
 dvt_gp_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,656,006     16,685 |10,672,691 
-       Yes |         0    216,546 |   216,546 
+        No |10,908,636     16,782 |10,925,418 
+       Yes |         0    217,742 |   217,742 
 -----------+----------------------+----------
-     Total |10,656,006    233,231 |10,889,237 
+     Total |10,908,636    234,524 |11,143,160 
 0
 
 dvt_hospit |          dvt
     al_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,656,006    186,801 |10,842,807 
-       Yes |         0     46,430 |    46,430 
+        No |10,908,636    187,860 |11,096,496 
+       Yes |         0     46,664 |    46,664 
 -----------+----------------------+----------
-     Total |10,656,006    233,231 |10,889,237 
+     Total |10,908,636    234,524 |11,143,160 
 0
 
 dvt_hospit |      dvt_gp_any
     al_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,656,006    186,801 |10,842,807 
-       Yes |    16,685     29,745 |    46,430 
+        No |10,908,636    187,860 |11,096,496 
+       Yes |    16,782     29,882 |    46,664 
 -----------+----------------------+----------
-     Total |10,672,691    216,546 |10,889,237 
+     Total |10,925,418    217,742 |11,143,160 
 0
 
   pe_gp_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,743,164       98.66       98.66
-        Yes |    146,073        1.34      100.00
+         No | 10,996,406       98.68       98.68
+        Yes |    146,754        1.32      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 pe_hospital |
        _any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,834,440       99.50       99.50
-        Yes |     54,797        0.50      100.00
+         No | 11,088,159       99.51       99.51
+        Yes |     55,001        0.49      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
          pe |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,735,236       98.59       98.59
-        Yes |    154,001        1.41      100.00
+         No | 10,988,434       98.61       98.61
+        Yes |    154,726        1.39      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
            |          pe
  pe_gp_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,735,236      7,928 |10,743,164 
-       Yes |         0    146,073 |   146,073 
+        No |10,988,434      7,972 |10,996,406 
+       Yes |         0    146,754 |   146,754 
 -----------+----------------------+----------
-     Total |10,735,236    154,001 |10,889,237 
+     Total |10,988,434    154,726 |11,143,160 
 0
 
 pe_hospita |          pe
      l_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,735,236     99,204 |10,834,440 
-       Yes |         0     54,797 |    54,797 
+        No |10,988,434     99,725 |11,088,159 
+       Yes |         0     55,001 |    55,001 
 -----------+----------------------+----------
-     Total |10,735,236    154,001 |10,889,237 
+     Total |10,988,434    154,726 |11,143,160 
 0
 
 pe_hospita |       pe_gp_any
      l_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,735,236     99,204 |10,834,440 
-       Yes |     7,928     46,869 |    54,797 
+        No |10,988,434     99,725 |11,088,159 
+       Yes |     7,972     47,029 |    55,001 
 -----------+----------------------+----------
-     Total |10,743,164    146,073 |10,889,237 
+     Total |10,996,406    146,754 |11,143,160 
 0
 
 cvt_vte_gp_ |
         any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,886,463       99.97       99.97
-        Yes |      2,774        0.03      100.00
+         No | 11,140,372       99.97       99.97
+        Yes |      2,788        0.03      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 cvt_vte_hos |
   pital_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,887,904       99.99       99.99
-        Yes |      1,333        0.01      100.00
+         No | 11,141,818       99.99       99.99
+        Yes |      1,342        0.01      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
     cvt_vte |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,885,998       99.97       99.97
-        Yes |      3,239        0.03      100.00
+         No | 11,139,904       99.97       99.97
+        Yes |      3,256        0.03      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 cvt_vte_gp |        cvt_vte
       _any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,885,998        465 |10,886,463 
-       Yes |         0      2,774 |     2,774 
+        No |11,139,904        468 |11,140,372 
+       Yes |         0      2,788 |     2,788 
 -----------+----------------------+----------
-     Total |10,885,998      3,239 |10,889,237 
+     Total |11,139,904      3,256 |11,143,160 
 0
 
 cvt_vte_ho |        cvt_vte
 spital_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,885,998      1,906 |10,887,904 
-       Yes |         0      1,333 |     1,333 
+        No |11,139,904      1,914 |11,141,818 
+       Yes |         0      1,342 |     1,342 
 -----------+----------------------+----------
-     Total |10,885,998      3,239 |10,889,237 
+     Total |11,139,904      3,256 |11,143,160 
 0
 
 cvt_vte_ho |    cvt_vte_gp_any
 spital_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,885,998      1,906 |10,887,904 
-       Yes |       465        868 |     1,333 
+        No |11,139,904      1,914 |11,141,818 
+       Yes |       468        874 |     1,342 
 -----------+----------------------+----------
-     Total |10,886,463      2,774 |10,889,237 
+     Total |11,140,372      2,788 |11,143,160 
 0
 
 portal_vte_ |
      gp_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,886,285       99.97       99.97
-        Yes |      2,952        0.03      100.00
+         No | 11,140,187       99.97       99.97
+        Yes |      2,973        0.03      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 portal_vte_ |
 hospital_an |
           y |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,886,510       99.97       99.97
-        Yes |      2,727        0.03      100.00
+         No | 11,140,413       99.98       99.98
+        Yes |      2,747        0.02      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
  portal_vte |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,885,039       99.96       99.96
-        Yes |      4,198        0.04      100.00
+         No | 11,138,930       99.96       99.96
+        Yes |      4,230        0.04      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 portal_vte |      portal_vte
    _gp_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,885,039      1,246 |10,886,285 
-       Yes |         0      2,952 |     2,952 
+        No |11,138,930      1,257 |11,140,187 
+       Yes |         0      2,973 |     2,973 
 -----------+----------------------+----------
-     Total |10,885,039      4,198 |10,889,237 
+     Total |11,138,930      4,230 |11,143,160 
 0
 
 portal_vte |
 _hospital_ |      portal_vte
        any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,885,039      1,471 |10,886,510 
-       Yes |         0      2,727 |     2,727 
+        No |11,138,930      1,483 |11,140,413 
+       Yes |         0      2,747 |     2,747 
 -----------+----------------------+----------
-     Total |10,885,039      4,198 |10,889,237 
+     Total |11,138,930      4,230 |11,143,160 
 0
 
 portal_vte |
 _hospital_ |   portal_vte_gp_any
        any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,885,039      1,471 |10,886,510 
-       Yes |     1,246      1,481 |     2,727 
+        No |11,138,930      1,483 |11,140,413 
+       Yes |     1,257      1,490 |     2,747 
 -----------+----------------------+----------
-     Total |10,886,285      2,952 |10,889,237 
+     Total |11,140,187      2,973 |11,143,160 
 0
 
 hepatic_vte |
     _gp_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,889,008      100.00      100.00
+         No | 11,142,931      100.00      100.00
         Yes |        229        0.00      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 hepatic_vte |
 _hospital_a |
          ny |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,888,755      100.00      100.00
-        Yes |        482        0.00      100.00
+         No | 11,142,674      100.00      100.00
+        Yes |        486        0.00      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 hepatic_vte |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,888,653       99.99       99.99
-        Yes |        584        0.01      100.00
+         No | 11,142,572       99.99       99.99
+        Yes |        588        0.01      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 hepatic_vt |      hepatic_vte
   e_gp_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,888,653        355 |10,889,008 
+        No |11,142,572        359 |11,142,931 
        Yes |         0        229 |       229 
 -----------+----------------------+----------
-     Total |10,888,653        584 |10,889,237 
+     Total |11,142,572        588 |11,143,160 
 0
 
 hepatic_vt |
 e_hospital |      hepatic_vte
       _any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,888,653        102 |10,888,755 
-       Yes |         0        482 |       482 
+        No |11,142,572        102 |11,142,674 
+       Yes |         0        486 |       486 
 -----------+----------------------+----------
-     Total |10,888,653        584 |10,889,237 
+     Total |11,142,572        588 |11,143,160 
 0
 
 hepatic_vt |
 e_hospital |  hepatic_vte_gp_any
       _any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,888,653        102 |10,888,755 
-       Yes |       355        127 |       482 
+        No |11,142,572        102 |11,142,674 
+       Yes |       359        127 |       486 
 -----------+----------------------+----------
-     Total |10,889,008        229 |10,889,237 
+     Total |11,142,931        229 |11,143,160 
 0
 
 vc_vte_gp_a |
          ny |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,888,804      100.00      100.00
-        Yes |        433        0.00      100.00
+         No | 11,142,725      100.00      100.00
+        Yes |        435        0.00      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 vc_vte_hosp |
    ital_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,888,270       99.99       99.99
-        Yes |        967        0.01      100.00
+         No | 11,142,187       99.99       99.99
+        Yes |        973        0.01      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
      vc_vte |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,887,992       99.99       99.99
-        Yes |      1,245        0.01      100.00
+         No | 11,141,908       99.99       99.99
+        Yes |      1,252        0.01      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 vc_vte_gp_ |        vc_vte
        any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,887,992        812 |10,888,804 
-       Yes |         0        433 |       433 
+        No |11,141,908        817 |11,142,725 
+       Yes |         0        435 |       435 
 -----------+----------------------+----------
-     Total |10,887,992      1,245 |10,889,237 
+     Total |11,141,908      1,252 |11,143,160 
 0
 
 vc_vte_hos |        vc_vte
  pital_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,887,992        278 |10,888,270 
-       Yes |         0        967 |       967 
+        No |11,141,908        279 |11,142,187 
+       Yes |         0        973 |       973 
 -----------+----------------------+----------
-     Total |10,887,992      1,245 |10,889,237 
+     Total |11,141,908      1,252 |11,143,160 
 0
 
 vc_vte_hos |     vc_vte_gp_any
  pital_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,887,992        278 |10,888,270 
-       Yes |       812        155 |       967 
+        No |11,141,908        279 |11,142,187 
+       Yes |       817        156 |       973 
 -----------+----------------------+----------
-     Total |10,888,804        433 |10,889,237 
+     Total |11,142,725        435 |11,143,160 
 0
 
 unspecified |
 _vte_gp_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,886,040       99.97       99.97
-        Yes |      3,197        0.03      100.00
+         No | 11,139,893       99.97       99.97
+        Yes |      3,267        0.03      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 unspecified |
 _vte_hospit |
      al_any |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,876,669       99.88       99.88
-        Yes |     12,568        0.12      100.00
+         No | 11,130,509       99.89       99.89
+        Yes |     12,651        0.11      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 unspecified |
        _vte |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,873,503       99.86       99.86
-        Yes |     15,734        0.14      100.00
+         No | 11,127,273       99.86       99.86
+        Yes |     15,887        0.14      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
 unspecifie |
 d_vte_gp_a |    unspecified_vte
         ny |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,873,503     12,537 |10,886,040 
-       Yes |         0      3,197 |     3,197 
+        No |11,127,273     12,620 |11,139,893 
+       Yes |         0      3,267 |     3,267 
 -----------+----------------------+----------
-     Total |10,873,503     15,734 |10,889,237 
+     Total |11,127,273     15,887 |11,143,160 
 0
 
 unspecifie |
 d_vte_hosp |    unspecified_vte
   ital_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,873,503      3,166 |10,876,669 
-       Yes |         0     12,568 |    12,568 
+        No |11,127,273      3,236 |11,130,509 
+       Yes |         0     12,651 |    12,651 
 -----------+----------------------+----------
-     Total |10,873,503     15,734 |10,889,237 
+     Total |11,127,273     15,887 |11,143,160 
 0
 
 unspecifie | unspecified_vte_gp_an
 d_vte_hosp |           y
   ital_any |        No        Yes |     Total
 -----------+----------------------+----------
-        No |10,873,503      3,166 |10,876,669 
-       Yes |    12,537         31 |    12,568 
+        No |11,127,273      3,236 |11,130,509 
+       Yes |    12,620         31 |    12,651 
 -----------+----------------------+----------
-     Total |10,886,040      3,197 |10,889,237 
+     Total |11,139,893      3,267 |11,143,160 
 
 . 
 . * Handle SMV and other diiferently (only one source of information)
 . 
 . foreach var of varlist smv_vte other_vte { 
   2.         
-.         label define `var' 1 "Yes" 0 "No"
-  3.         label values `var' `var' 
+.         label define `var'_label 1 "Yes" 0 "No"
+  3.         label values `var' `var'_label 
   4. 
 .         safetab `var' 
   5. 
@@ -603,18 +627,18 @@ d_vte_hosp |           y
 
     smv_vte |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,888,607       99.99       99.99
-        Yes |        630        0.01      100.00
+         No | 11,142,527       99.99       99.99
+        Yes |        633        0.01      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 0
 
   other_vte |      Freq.     Percent        Cum.
 ------------+-----------------------------------
-         No | 10,886,586       99.98       99.98
-        Yes |      2,651        0.02      100.00
+         No | 11,140,496       99.98       99.98
+        Yes |      2,664        0.02      100.00
 ------------+-----------------------------------
-      Total | 10,889,237      100.00
+      Total | 11,143,160      100.00
 
 . 
 . 
@@ -637,34 +661,34 @@ d_vte_hosp |           y
 > 5.25)*12)
   4. 
 . }
-(10,656,006 missing values generated)
-(10,656,006 missing values generated)
-(10,735,236 missing values generated)
-(10,735,236 missing values generated)
-(10,885,998 missing values generated)
-(10,885,998 missing values generated)
-(10,885,039 missing values generated)
-(10,885,039 missing values generated)
-(10,888,653 missing values generated)
-(10,888,653 missing values generated)
-(10,887,992 missing values generated)
-(10,887,992 missing values generated)
-(10,873,503 missing values generated)
-(10,873,503 missing values generated)
+(10,908,636 missing values generated)
+(10,908,636 missing values generated)
+(10,988,434 missing values generated)
+(10,988,434 missing values generated)
+(11,139,904 missing values generated)
+(11,139,904 missing values generated)
+(11,138,930 missing values generated)
+(11,138,930 missing values generated)
+(11,142,572 missing values generated)
+(11,142,572 missing values generated)
+(11,141,908 missing values generated)
+(11,141,908 missing values generated)
+(11,127,273 missing values generated)
+(11,127,273 missing values generated)
 
 . 
 . gen time_since_smv_vte = (((any_covid_vaccine_date - smv_vte_gp)/365.25)*12)
-(10,888,607 missing values generated)
+(11,142,527 missing values generated)
 
 . gen time_since_other_vte = (((any_covid_vaccine_date - other_vte_gp)/365.25)*
 > 12)
-(10,886,586 missing values generated)
+(11,140,496 missing values generated)
 
 . 
 . gen time_since_any = max(time_since_dvt, time_since_pe, time_since_cvt_vte, t
 > ime_since_portal_vte, time_since_smv_vte, time_since_hepatic_vte, time_since_
 > vc_vte, time_since_unspecified_vte, time_since_other_vte)
-(10,522,959 missing values generated)
+(10,774,895 missing values generated)
 
 . 
 . * event in last three months? 
@@ -677,24 +701,24 @@ d_vte_hosp |           y
   5.         label values recent_`var' recent_`var' 
   6. 
 . }
-(10,882,962 missing values generated)
-(10,882,962 real changes made)
-(10,881,696 missing values generated)
-(10,881,696 real changes made)
-(10,889,095 missing values generated)
-(10,889,095 real changes made)
-(10,888,849 missing values generated)
-(10,888,849 real changes made)
-(10,889,205 missing values generated)
-(10,889,205 real changes made)
-(10,889,190 missing values generated)
-(10,889,190 real changes made)
-(10,889,137 missing values generated)
-(10,889,137 real changes made)
-(10,888,300 missing values generated)
-(10,888,300 real changes made)
-(10,889,171 missing values generated)
-(10,889,171 real changes made)
+(11,136,836 missing values generated)
+(11,136,836 real changes made)
+(11,135,545 missing values generated)
+(11,135,545 real changes made)
+(11,143,017 missing values generated)
+(11,143,017 real changes made)
+(11,142,768 missing values generated)
+(11,142,768 real changes made)
+(11,143,128 missing values generated)
+(11,143,128 real changes made)
+(11,143,113 missing values generated)
+(11,143,113 real changes made)
+(11,143,060 missing values generated)
+(11,143,060 real changes made)
+(11,142,222 missing values generated)
+(11,142,222 real changes made)
+(11,143,091 missing values generated)
+(11,143,091 real changes made)
 
 . 
 . gen recent_any = max(recent_dvt, recent_pe, recent_cvt_vte, recent_portal_vte
@@ -710,10 +734,10 @@ d_vte_hosp |           y
 . 
 . * Sex
 . gen male = 1 if sex == "M"
-(5,890,386 missing values generated)
+(6,008,190 missing values generated)
 
 . replace male = 2 if sex == "F"
-(5,890,386 real changes made)
+(6,008,190 real changes made)
 
 . 
 . label define male 1 "Yes" 2 "No"
@@ -726,7 +750,7 @@ d_vte_hosp |           y
 > https://codelists.opensafely.org/codelist/opensafely/ethnicity/2020-04-27/ */
 >  
 . replace ethnicity = .u if ethnicity == .
-(2,457,388 real changes made, 2,457,388 to missing)
+(2,507,636 real changes made, 2,507,636 to missing)
 
 . 
 . label define ethnicity  1 "White"                                       ///
@@ -754,31 +778,35 @@ d_vte_hosp |           y
 . 
 . * Age 
 . * classified as 16-49, 50-64, 65-69, 70-74, 75-79, or 80-105 years 
-. gen     agegroup=1 if age>=16 & age<49
-(8,257,202 missing values generated)
+. gen     agegroup=1 if age>=16 & age<30
+(10,546,728 missing values generated)
 
-. replace agegroup=2 if age>=50 & age<64
-(3,722,033 real changes made)
+. replace agegroup=2 if age>=30 & age<50
+(2,467,104 real changes made)
 
-. replace agegroup=3 if age>=65 & age<69
-(862,193 real changes made)
+. replace agegroup=3 if age>=50 & age<65
+(3,974,613 real changes made)
 
-. replace agegroup=4 if age>=70 & age<74
-(887,773 real changes made)
+. replace agegroup=4 if age>=65 & age<70
+(1,074,329 real changes made)
 
-. replace agegroup=5 if age>=75 & age<79
-(686,125 real changes made)
+. replace agegroup=5 if age>=70 & age<75
+(1,124,688 real changes made)
 
-. replace agegroup=6 if age>=80
-(1,086,604 real changes made)
+. replace agegroup=6 if age>=75 & age<80
+(816,927 real changes made)
+
+. replace agegroup=7 if age>=80
+(1,089,067 real changes made)
 
 . 
-. label define agegroup   1 "18-<40" ///
->                                                 2 "40-<50" ///
->                                                 3 "50-<60" ///
->                                                 4 "60-<70" ///
->                                                 5 "70-<80" ///
->                                                 6 "80+"
+. label define agegroup   1 "16-<30" ///
+>                                                 2 "30-<50" ///
+>                                                 3 "50-<65" ///
+>                                                 4 "65-<70" ///
+>                                                 5 "70-<75" ///
+>                                                 6 "75-<80" ///
+>                                                 7 "80+"
 
 .                                                 
 . label values agegroup agegroup
@@ -791,27 +819,27 @@ d_vte_hosp |           y
 . 
 . * recode strange values 
 . replace bmi = . if bmi == 0 
-(1,429,025 real changes made, 1,429,025 to missing)
+(1,488,416 real changes made, 1,488,416 to missing)
 
 . replace bmi = . if !inrange(bmi, 15, 50)
-(95,811 real changes made, 95,811 to missing)
+(96,762 real changes made, 96,762 to missing)
 
 . 
 . * generate categories 
 . gen     bmicat = .
-(10,889,237 missing values generated)
+(11,143,160 missing values generated)
 
 . recode  bmicat . = 1 if bmi < 30 
-(bmicat: 6382950 changes made)
+(bmicat: 6527730 changes made)
 
 . recode  bmicat . = 2 if bmi < 40 
-(bmicat: 2558932 changes made)
+(bmicat: 2605198 changes made)
 
 . recode  bmicat . = 3 if bmi < .
-(bmicat: 422519 changes made)
+(bmicat: 425054 changes made)
 
 . replace bmicat = .u if bmi >= .
-(1,524,836 real changes made, 1,524,836 to missing)
+(1,585,178 real changes made, 1,585,178 to missing)
 
 . 
 . label define bmicat 1 "Normal (<30)"    ///
@@ -830,19 +858,19 @@ d_vte_hosp |           y
 . 
 . * Create a binary varaible 
 . gen care_home = 0 if care_home_type == "PrivateHome"
-(167,652 missing values generated)
+(169,428 missing values generated)
 
 . replace care_home = 1 if care_home_type == "CareHome"  
-(34,483 real changes made)
+(34,466 real changes made)
 
 . replace care_home = 2 if care_home_type == "NursingHome"  
-(27,227 real changes made)
+(27,336 real changes made)
 
 . replace care_home = 3 if care_home_type == "CareOrNursingHome"  
-(1,465 real changes made)
+(1,461 real changes made)
 
 . replace care_home = .u if care_home >= .
-(104,477 real changes made, 104,477 to missing)
+(106,165 real changes made, 106,165 to missing)
 
 . 
 . label define care_home 3 "Care or Nursing Home" 2 "Nursing Home" 1 "Care Home
@@ -857,12 +885,12 @@ d_vte_hosp |           y
                      |               care_home_type
            care_home |  CareHome  CareOrN..  Nursing..  Private.. |     Total
 ---------------------+--------------------------------------------+----------
-        Private Home |         0          0          0 10,721,585 |10,721,585 
-           Care Home |    34,483          0          0          0 |    34,483 
-        Nursing Home |         0          0     27,227          0 |    27,227 
-Care or Nursing Home |         0      1,465          0          0 |     1,465 
+        Private Home |         0          0          0 10,973,732 |10,973,732 
+           Care Home |    34,466          0          0          0 |    34,466 
+        Nursing Home |         0          0     27,336          0 |    27,336 
+Care or Nursing Home |         0      1,461          0          0 |     1,461 
 ---------------------+--------------------------------------------+----------
-               Total |    34,483      1,465     27,227 10,721,585 |10,784,760 
+               Total |    34,466      1,461     27,336 10,973,732 |11,036,995 
 
 . 
 . * OTHER CLINICAL COMORBIDITIES 
@@ -981,5 +1009,5 @@ file /workspace/output/tempdata/temp_data.dta saved
       name:  <unnamed>
        log:  /workspace/output/logs/00_data_management.log
   log type:  text
- closed on:  29 Apr 2021, 18:02:18
+ closed on:   6 May 2021, 12:39:11
 -------------------------------------------------------------------------------

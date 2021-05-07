@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /workspace/output/logs/01_study_population.log
   log type:  text
- opened on:  29 Apr 2021, 18:05:54
+ opened on:   6 May 2021, 12:42:10
 
 . 
 . * IMPORT DATA================================================================
@@ -34,16 +34,21 @@
 
 . 
 . * Known vaccine type 
-. datacheck inlist(vaccine_type, 1, 0, .), nolist
-
- (7181706 contradictions)
+. datacheck inlist(vaccine_type, 1, 2, 3, .), nolist
 
 . noi di "DROP MISSING VACCINE TYPE"
 DROP MISSING VACCINE TYPE
 
+. drop if vaccine_type == 3 
+(3,555 observations deleted)
+
 . 
-. drop if vaccine_type == . 
-(20,403 observations deleted)
+. * Not AZ & Pfizer at same date 
+. noi di "DROP DUPLICATE DATES"
+DROP DUPLICATE DATES
+
+. drop if az_covid_vaccine_date == pfizer_covid_vaccine_date 
+(37,894 observations deleted)
 
 . 
 . * Confirm one row per patient 
@@ -63,6 +68,11 @@ Duplicates in terms of patient_id
 (note: file /workspace/output/tempdata/study_population.dta not found)
 file /workspace/output/tempdata/study_population.dta saved
 
+. export delimited using `c(pwd)'/`outputfile2', replace 
+(note: file /workspace/output/tempdata/study_population.csv not found)
+file /workspace/output/tempdata/study_population.csv saved
+
+. 
 . 
 . * CLOSE LOG==================================================================
 > =*/ 
@@ -71,5 +81,5 @@ file /workspace/output/tempdata/study_population.dta saved
       name:  <unnamed>
        log:  /workspace/output/logs/01_study_population.log
   log type:  text
- closed on:  29 Apr 2021, 18:06:30
+ closed on:   6 May 2021, 12:45:54
 -------------------------------------------------------------------------------
