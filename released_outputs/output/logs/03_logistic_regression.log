@@ -1,0 +1,159 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /workspace/output/logs/03_logistic_regression.log
+  log type:  text
+ opened on:   6 May 2021, 18:58:22
+
+. 
+. * IMPORT DATA================================================================
+> =*/ 
+. 
+. use `c(pwd)'/`inputfile', clear
+
+. 
+. /* RUN LOGISTIC REGRESSION AND SAVE RESULTS==================================
+> =*/
+. 
+. *  Print the results for the main model 
+. 
+. cap file close tablecontent
+
+. file open tablecontent using `c(pwd)'/output/tables/table2.txt, write text re
+> place
+(note: file /workspace/output/tables/table2.txt not found)
+
+. 
+. * Column headings 
+. file write tablecontent ("Table 2: Association between Vaccination Status and
+>  VTE History") _n
+
+. file write tablecontent _tab _tab ("Univariable") _tab _tab ("Age Adjusted") 
+> _tab  _tab _n
+
+. file write tablecontent _tab ("OR") _tab ("95% CI") _tab ("OR") _tab ("95% CI
+> ") _n                              
+
+. 
+. * Row headings 
+. local lab1: label (vaccine_type) 1, strict
+
+. local lab2: label (vaccine_type) 2, strict
+
+. 
+. file write tablecontent ("`lab1'") _tab ("1.00") _tab _tab ("1.00") _tab _n  
+>    
+
+. file write tablecontent ("`lab2'") _tab   
+
+. 
+. /* UNivar Model */ 
+. 
+. logistic any_vte vaccine_type 
+
+Logistic regression                             Number of obs     = 11,101,693
+                                                LR chi2(1)        =   14153.90
+                                                Prob > chi2       =     0.0000
+Log likelihood = -1608274.6                     Pseudo R2         =     0.0044
+
+------------------------------------------------------------------------------
+     any_vte | Odds Ratio   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+vaccine_type |   .6643651   .0022559  -120.43   0.000     .6599583    .6688014
+       _cons |   .0665403   .0003733  -482.99   0.000     .0658126    .0672761
+------------------------------------------------------------------------------
+Note: _cons estimates baseline odds.
+
+. matrix m1 = r(table)
+
+. matrix list m1
+
+m1[9,2]
+             any_vte:      any_vte:
+        vaccine_type         _cons
+     b     .66436515     .06654035
+    se     .00225593     .00037334
+     z    -120.42665    -482.99434
+pvalue             0             0
+    ll     .65995828     .06581262
+    ul     .66880144     .06727612
+    df             .             .
+  crit      1.959964      1.959964
+ eform             1             1
+
+. file write tablecontent %4.2f (m1[1,1]) _tab %4.2f (m1[5,1]) (" - ") %4.2f (m
+> 1[6,1]) _tab    
+
+. estimates clear 
+
+. 
+. /* Age-Adjusted Model */ 
+. 
+. logistic any_vte vaccine_type i.agegroup
+
+Logistic regression                             Number of obs     = 11,101,693
+                                                LR chi2(7)        =   87440.70
+                                                Prob > chi2       =     0.0000
+Log likelihood = -1571631.2                     Pseudo R2         =     0.0271
+
+------------------------------------------------------------------------------
+     any_vte | Odds Ratio   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+vaccine_type |   .8630202   .0031532   -40.32   0.000     .8568621    .8692225
+             |
+    agegroup |
+     30-<50  |   2.014332   .0262391    53.76   0.000     1.963555    2.066422
+     50-<65  |   2.240943   .0284779    63.50   0.000     2.185817    2.297459
+     65-<70  |   3.220033   .0429557    87.66   0.000     3.136933    3.305335
+     70-<75  |   4.020712   .0527027   106.15   0.000     3.918732    4.125346
+     75-<80  |   5.001779   .0660284   121.94   0.000     4.874025    5.132881
+        80+  |   6.522501   .0838938   145.80   0.000     6.360127     6.68902
+             |
+       _cons |   .0144604   .0001959  -312.70   0.000     .0140815    .0148496
+------------------------------------------------------------------------------
+Note: _cons estimates baseline odds.
+
+. matrix m2 = r(table)
+
+. matrix list m2
+
+m2[9,9]
+             any_vte:      any_vte:      any_vte:      any_vte:      any_vte:
+                                1b.            2.            3.            4.
+        vaccine_type      agegroup      agegroup      agegroup      agegroup
+     b     .86302021             1     2.0143318     2.2409428     3.2200334
+    se     .00315319             .     .02623909     .02847788      .0429557
+     z    -40.320286             .      53.75993     63.495215     87.659626
+pvalue             0             .             0             0             0
+    ll     .85686214             .      1.963555     2.1858166     3.1369329
+    ul     .86922254             .     2.0664215     2.2974594     3.3053353
+    df             .             .             .             .             .
+  crit      1.959964      1.959964      1.959964      1.959964      1.959964
+ eform             1             1             1             1             1
+
+             any_vte:      any_vte:      any_vte:      any_vte:
+                   5.            6.            7.              
+            agegroup      agegroup      agegroup         _cons
+     b     4.0207118     5.0017785     6.5225007     .01446045
+    se     .05270273     .06602845     .08389378     .00019591
+     z     106.15495     121.94488     145.79592    -312.69888
+pvalue             0             0             0             0
+    ll     3.9187319      4.874025     6.3601272     .01408153
+    ul     4.1253456     5.1328806     6.6890196     .01484956
+    df             .             .             .             .
+  crit      1.959964      1.959964      1.959964      1.959964
+ eform             1             1             1             1
+
+. file write tablecontent %4.2f (m2[1,1]) _tab %4.2f (m2[5,1]) (" - ") %4.2f (m
+> 2[6,1]) _tab 
+
+. 
+. file close tablecontent
+
+. 
+. * Close log file 
+. log close
+      name:  <unnamed>
+       log:  /workspace/output/logs/03_logistic_regression.log
+  log type:  text
+ closed on:   6 May 2021, 18:59:34
+-------------------------------------------------------------------------------

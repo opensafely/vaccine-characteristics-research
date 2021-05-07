@@ -1,0 +1,5 @@
+Table 2: Association between Vaccination Status and VTE History
+		Univariable		Age Adjusted		
+	OR	95% CI	OR	95% CI
+Pfizer	1.00		1.00	
+AstraZeneca	0.66	0.66 - 0.67	0.86	0.86 - 0.87	
