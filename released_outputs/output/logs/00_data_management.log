@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /workspace/output/logs/00_data_management.log
   log type:  text
- opened on:   6 May 2021, 12:30:54
+ opened on:   7 May 2021, 17:33:09
 
 . 
 . 
@@ -770,6 +770,9 @@ d_vte_hosp |           y
 . 
 . * IMD 
 . * grouping is done in the study_definition 
+. replace imd = . if imd == 0 
+(227,073 real changes made, 227,073 to missing)
+
 . label define imd 1 "1 least deprived" 2 "2" 3 "3" 4 "4" 5 "5 most deprived" .
 > u "Unknown"
 
@@ -1009,5 +1012,5 @@ file /workspace/output/tempdata/temp_data.dta saved
       name:  <unnamed>
        log:  /workspace/output/logs/00_data_management.log
   log type:  text
- closed on:   6 May 2021, 12:39:11
+ closed on:   7 May 2021, 17:44:06
 -------------------------------------------------------------------------------

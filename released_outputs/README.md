@@ -9,5 +9,6 @@
   * output/plots
     * [output/plots/plot1.png](output/plots/plot1.png)
   * output/tables
+    * [output/tables/formatted_results_v0.1.xlsx](output/tables/formatted_results_v0.1.xlsx)
     * [output/tables/table1.txt](output/tables/table1.txt)
     * [output/tables/table2.txt](output/tables/table2.txt)
