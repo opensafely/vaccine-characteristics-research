@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /workspace/output/logs/03_logistic_regression.log
   log type:  text
- opened on:   6 May 2021, 18:58:22
+ opened on:   7 May 2021, 18:00:24
 
 . 
 . * IMPORT DATA================================================================
@@ -155,5 +155,5 @@ pvalue             0             0             0             0
       name:  <unnamed>
        log:  /workspace/output/logs/03_logistic_regression.log
   log type:  text
- closed on:   6 May 2021, 18:59:34
+ closed on:   7 May 2021, 18:01:28
 -------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  /workspace/output/logs/01_study_population.log
   log type:  text
- opened on:   6 May 2021, 12:42:10
+ opened on:   7 May 2021, 17:46:59
 
 . 
 . * IMPORT DATA================================================================
@@ -36,11 +36,18 @@
 . * Known vaccine type 
 . datacheck inlist(vaccine_type, 1, 2, 3, .), nolist
 
-. noi di "DROP MISSING VACCINE TYPE"
-DROP MISSING VACCINE TYPE
+. noi di "DROP IF BOTH VACCINES"
+DROP IF BOTH VACCINES
 
 . drop if vaccine_type == 3 
 (3,555 observations deleted)
+
+. 
+. noi di "DROP IF MISSING VACCINES"
+DROP IF MISSING VACCINES
+
+. drop if vaccine_type == . 
+(37,912 observations deleted)
 
 . 
 . * Not AZ & Pfizer at same date 
@@ -48,7 +55,7 @@ DROP MISSING VACCINE TYPE
 DROP DUPLICATE DATES
 
 . drop if az_covid_vaccine_date == pfizer_covid_vaccine_date 
-(37,894 observations deleted)
+(0 observations deleted)
 
 . 
 . * Confirm one row per patient 
@@ -81,5 +88,5 @@ file /workspace/output/tempdata/study_population.csv saved
       name:  <unnamed>
        log:  /workspace/output/logs/01_study_population.log
   log type:  text
- closed on:   6 May 2021, 12:45:54
+ closed on:   7 May 2021, 17:50:52
 -------------------------------------------------------------------------------
