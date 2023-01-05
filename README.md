@@ -1,12 +1,6 @@
 # Prevalence of risk factors for venous thromboembolism among people vaccinated with the Pfizer BioNTech and Oxford AstraZeneca COVID-19 vaccines in England
 
-This is the code and configuration for our project describing the prevalence of different thrombotic risk factors according to type of COVID-19 vaccine received among people in England. This is a work in progress, and the README will be updated before project completion. 
-
-* The paper is [here]()
-* Raw model outputs, including charts, crosstabs, etc, are in `released_outputs/`
-* If you are interested in how we defined our variables, take a look at the [study definition](analysis/study_definition.py); this is written in `python`, but non-programmers should be able to understand what is going on there
-* If you are interested in how we defined our code lists, look in the [codelists folder](./codelists/).
-* Developers and epidemiologists interested in the framework should review [the OpenSAFELY documentation](https://docs.opensafely.org)
+This is the code and configuration for a project which aimed to describe the prevalence of different thrombotic risk factors according to type of COVID-19 vaccine received among people in England. The project was paused after preliminary results were generated and the aims incorporated into another project. Due to the rapidly developing science at the time, we did not consider the preliminary data to have value which merited sumbitting for a separate publication. 
 
 # About the OpenSAFELY framework
 
