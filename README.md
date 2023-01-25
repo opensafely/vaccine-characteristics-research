@@ -1,6 +1,9 @@
 # Prevalence of risk factors for venous thromboembolism among people vaccinated with the Pfizer BioNTech and Oxford AstraZeneca COVID-19 vaccines in England
 
-This is the code and configuration for a project which aimed to describe the prevalence of different thrombotic risk factors according to type of COVID-19 vaccine received among people in England. The project was paused after preliminary results were generated and the aims incorporated into another project. Due to the rapidly developing science at the time, we did not consider the preliminary data to have value which merited sumbitting for a separate publication. 
+This is the code and configuration for a project which aimed to describe the prevalence of different thrombotic risk factors according to type of COVID-19 vaccine received among people in England. The project was paused after preliminary results were generated and the aims incorporated into other ongoing vaccine safety projects. One of these is published with information and results available here: https://github.com/opensafely/covid-vaccine-neuro-research, and one is ongoing (work delayed due to maternity leave) but will be linked as soon as completed.  
+
+
+Due to the rapidly developing science at the time, we did not consider the preliminary data to have value which merited sumbitting for a separate publication. 
 
 # About the OpenSAFELY framework
 
